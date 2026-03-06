@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     slug        TEXT        NOT NULL,
     plan        TEXT        NOT NULL DEFAULT 'free',
     status      TEXT        NOT NULL DEFAULT 'active',
-    settings    JSONB       NOT NULL DEFAULT '{}',
+    settings    TEXT       NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)

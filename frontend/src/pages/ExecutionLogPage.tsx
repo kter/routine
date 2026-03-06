@@ -2,7 +2,6 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle, XCircle, SkipForward } from "lucide-react";
 import { useExecution } from "@/features/executions/hooks/useExecution";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { formatDate } from "@/lib/utils";
 
 export default function ExecutionLogPage() {

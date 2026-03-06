@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS execution_steps (
     execution_id       UUID    NOT NULL,
     step_id            UUID    NOT NULL,
     position           INTEGER NOT NULL,
-    step_snapshot      JSONB   NOT NULL,
+    step_snapshot      TEXT   NOT NULL,
     status             TEXT    NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'completed', 'skipped')),
     evidence_text      TEXT,

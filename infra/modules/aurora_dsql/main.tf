@@ -2,11 +2,19 @@
 # Aurora DSQL Module
 ###############################################################################
 
-resource "aws_dsql_cluster" "main" {
+terraform {
+  required_providers {
+    awscc = {
+      source = "hashicorp/awscc"
+    }
+  }
+}
+
+resource "awscc_dsql_cluster" "main" {
   deletion_protection_enabled = var.environment == "prd"
 
-  tags = {
-    Name        = "${var.project}-${var.environment}"
-    Environment = var.environment
-  }
+  tags = [
+    { key = "Name", value = "${var.project}-${var.environment}" },
+    { key = "Environment", value = var.environment },
+  ]
 }

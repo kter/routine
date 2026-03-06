@@ -104,7 +104,7 @@ build-frontend:
 build-lambda:
 	@echo "Building Lambda package..."
 	rm -rf /tmp/lambda-build
-	cd $(BACKEND_DIR) && uv export --no-dev --no-hashes -o /tmp/lambda-requirements.txt
+	cd $(BACKEND_DIR) && uv export --no-dev --no-hashes --no-emit-project -o /tmp/lambda-requirements.txt
 	pip install -r /tmp/lambda-requirements.txt -t /tmp/lambda-build --quiet
 	cp -r $(BACKEND_DIR)/src/routineops /tmp/lambda-build/
 	cd /tmp/lambda-build && zip -r $(CURDIR)/$(LAMBDA_ZIP) . -x "*.pyc" -x "__pycache__/*" -x "*.dist-info/*"
@@ -176,14 +176,14 @@ deploy-frontend:
 ## db-migrate: Apply DDL schema + indexes (ENV=dev|prd)
 db-migrate:
 	@echo "Running DB migrations for ENV=$(ENV)..."
-	@for f in $(DB_DIR)/schema/*.sql; do \
-		echo "Applying $$f..."; \
-		AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f "$$f"; \
-	done
-	@for f in $(DB_DIR)/indexes/*.sql; do \
-		echo "Applying $$f..."; \
-		AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f "$$f"; \
-	done
+	@AWS_PROFILE=$(ENV) cd $(BACKEND_DIR) && uv run python -c "\
+import boto3, psycopg2, glob, os; \
+endpoint = os.environ['DB_CLUSTER_ENDPOINT']; \
+token = boto3.client('dsql', region_name=os.getenv('AWS_REGION','ap-northeast-1')).generate_db_connect_admin_auth_token(Hostname=endpoint, Region=os.getenv('AWS_REGION','ap-northeast-1')); \
+conn = psycopg2.connect(host=endpoint, port=5432, user='admin', password=token, dbname='postgres', sslmode='require'); \
+conn.autocommit = True; cur = conn.cursor(); \
+[cur.execute(s.strip()) for f in sorted(glob.glob('../$(DB_DIR)/schema/*.sql')) + sorted(glob.glob('../$(DB_DIR)/indexes/*.sql')) for s in open(f).read().split(';') if s.strip() and not s.strip().startswith('--')]; \
+cur.close(); conn.close(); print('Migrations complete.')"
 
 ## db-seed: Insert development seed data (ENV=dev only)
 db-seed:

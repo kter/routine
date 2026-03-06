@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { getCurrentUser, signOut as amplifySignOut } from "@/lib/auth/cognito";
-import type { AuthUser, AuthState } from "../types";
+import type { AuthState } from "../types";
 
 interface AuthContextValue extends AuthState {
   signOut: () => Promise<void>;

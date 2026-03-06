@@ -1,8 +1,5 @@
 output "cluster_endpoint" {
-  value     = aws_dsql_cluster.main.endpoint
+  # Aurora DSQL endpoint format: <cluster-id>.dsql.<region>.on.aws
+  value     = "${awscc_dsql_cluster.main.identifier}.dsql.${var.aws_region}.on.aws"
   sensitive = true
-}
-
-output "cluster_arn" {
-  value = aws_dsql_cluster.main.arn
 }

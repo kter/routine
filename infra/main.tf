@@ -48,6 +48,13 @@ provider "aws" {
   }
 }
 
+# ── awscc provider (Aurora DSQL identifier取得用) ───────────────────────
+
+provider "awscc" {
+  region  = var.aws_region
+  profile = local.config.aws_profile
+}
+
 # ── Route53 ホストゾーン（既存リソースを参照） ──────────────────────────
 
 data "aws_route53_zone" "zone" {
@@ -69,6 +76,11 @@ module "aurora_dsql" {
 
   project     = "routineops"
   environment = terraform.workspace
+  aws_region  = var.aws_region
+
+  providers = {
+    awscc = awscc
+  }
 }
 
 module "evidence_storage" {

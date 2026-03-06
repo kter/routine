@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS executions (
     completed_at     TIMESTAMPTZ,
     duration_seconds INTEGER,
     notes            TEXT    NOT NULL DEFAULT '',
-    metadata         JSONB   NOT NULL DEFAULT '{}',
+    metadata         TEXT   NOT NULL DEFAULT '{}',
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)
