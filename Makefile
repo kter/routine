@@ -1,0 +1,214 @@
+.PHONY: dev dev-frontend dev-backend \
+        test test-unit test-integration \
+        lint lint-frontend lint-backend \
+        fmt fmt-terraform fmt-backend fmt-frontend \
+        build build-frontend build-lambda \
+        tf-bootstrap tf-init tf-plan tf-apply tf-destroy \
+        deploy deploy-frontend \
+        db-migrate db-seed \
+        clean help
+
+# ──────────────────────────────────────────────────────────────────────
+# Configuration
+# ──────────────────────────────────────────────────────────────────────
+ENV ?= dev
+BACKEND_DIR := backend
+FRONTEND_DIR := frontend
+INFRA_DIR := infra
+DB_DIR := db
+TESTS_DIR := tests
+
+LAMBDA_ZIP := lambda.zip
+
+# ──────────────────────────────────────────────────────────────────────
+# Local Development
+# ──────────────────────────────────────────────────────────────────────
+
+## dev: Start frontend + backend locally (requires tmux or runs in background)
+dev:
+	@echo "Starting frontend and backend..."
+	@$(MAKE) -j2 dev-frontend dev-backend
+
+## dev-frontend: Start Vite dev server
+dev-frontend:
+	cd $(FRONTEND_DIR) && npm run dev
+
+## dev-backend: Start FastAPI uvicorn server
+dev-backend:
+	cd $(BACKEND_DIR) && uv run uvicorn src.routineops.main:app --reload --host 0.0.0.0 --port 8000
+
+# ──────────────────────────────────────────────────────────────────────
+# Testing
+# ──────────────────────────────────────────────────────────────────────
+
+## test: Run all tests (unit + integration)
+test: test-unit test-integration
+
+## test-unit: Run unit tests only
+test-unit:
+	cd $(BACKEND_DIR) && uv run pytest $(CURDIR)/$(TESTS_DIR)/unit -v --tb=short
+
+## test-integration: Run integration tests only
+test-integration:
+	cd $(BACKEND_DIR) && uv run pytest $(CURDIR)/$(TESTS_DIR)/integration -v --tb=short
+
+# ──────────────────────────────────────────────────────────────────────
+# Lint
+# ──────────────────────────────────────────────────────────────────────
+
+## lint: Run all linters
+lint: lint-frontend lint-backend
+
+## lint-frontend: Run ESLint on frontend
+lint-frontend:
+	cd $(FRONTEND_DIR) && npm run lint
+
+## lint-backend: Run ruff + mypy on backend
+lint-backend:
+	cd $(BACKEND_DIR) && uv run ruff check src/
+	cd $(BACKEND_DIR) && uv run mypy src/
+
+# ──────────────────────────────────────────────────────────────────────
+# Format
+# ──────────────────────────────────────────────────────────────────────
+
+## fmt: Format all code (terraform + backend + frontend)
+fmt: fmt-terraform fmt-backend fmt-frontend
+
+## fmt-terraform: Format Terraform files
+fmt-terraform:
+	terraform -chdir=$(INFRA_DIR) fmt -recursive
+	terraform -chdir=$(INFRA_DIR)/bootstrap fmt -recursive
+
+## fmt-backend: Format Python backend with ruff
+fmt-backend:
+	cd $(BACKEND_DIR) && uv run ruff format src/
+	cd $(BACKEND_DIR) && uv run ruff format $(CURDIR)/$(TESTS_DIR)/
+
+## fmt-frontend: Format frontend with prettier
+fmt-frontend:
+	cd $(FRONTEND_DIR) && npm run format
+
+# ──────────────────────────────────────────────────────────────────────
+# Build
+# ──────────────────────────────────────────────────────────────────────
+
+## build: Build frontend + Lambda zip
+build: build-frontend build-lambda
+
+## build-frontend: Build React SPA for production
+build-frontend:
+	cd $(FRONTEND_DIR) && npm run build
+
+## build-lambda: Package backend as Lambda zip
+build-lambda:
+	@echo "Building Lambda package..."
+	rm -rf /tmp/lambda-build
+	cd $(BACKEND_DIR) && uv export --no-dev --no-hashes -o /tmp/lambda-requirements.txt
+	pip install -r /tmp/lambda-requirements.txt -t /tmp/lambda-build --quiet
+	cp -r $(BACKEND_DIR)/src/routineops /tmp/lambda-build/
+	cd /tmp/lambda-build && zip -r $(CURDIR)/$(LAMBDA_ZIP) . -x "*.pyc" -x "__pycache__/*" -x "*.dist-info/*"
+	@echo "Lambda zip created: $(LAMBDA_ZIP)"
+
+# ──────────────────────────────────────────────────────────────────────
+# Terraform
+# ──────────────────────────────────────────────────────────────────────
+
+## tf-bootstrap: Create remote state S3 bucket + DynamoDB table (run once)
+tf-bootstrap:
+	@echo "Bootstrapping Terraform remote state..."
+	terraform -chdir=$(INFRA_DIR)/bootstrap init
+	terraform -chdir=$(INFRA_DIR)/bootstrap apply -auto-approve
+
+## tf-init: Initialize Terraform and select workspace (ENV=dev|prd)
+tf-init:
+	@echo "Initializing Terraform for ENV=$(ENV)..."
+	terraform -chdir=$(INFRA_DIR) init
+	terraform -chdir=$(INFRA_DIR) workspace select $(ENV) || \
+		terraform -chdir=$(INFRA_DIR) workspace new $(ENV)
+
+## tf-plan: Plan Terraform changes (ENV=dev|prd)
+tf-plan:
+	@echo "Planning Terraform for ENV=$(ENV)..."
+	terraform -chdir=$(INFRA_DIR) workspace select $(ENV)
+	terraform -chdir=$(INFRA_DIR) plan -out=$(ENV).tfplan
+
+## tf-apply: Apply Terraform changes (ENV=dev|prd)
+tf-apply:
+	@echo "Applying Terraform for ENV=$(ENV)..."
+	terraform -chdir=$(INFRA_DIR) workspace select $(ENV)
+	terraform -chdir=$(INFRA_DIR) apply $(ENV).tfplan
+
+## tf-destroy: Destroy Terraform resources (ENV=dev|prd) - requires confirmation
+tf-destroy:
+	@echo "WARNING: This will destroy all resources in ENV=$(ENV)!"
+	@read -p "Type the environment name to confirm: " confirm; \
+		if [ "$$confirm" = "$(ENV)" ]; then \
+			terraform -chdir=$(INFRA_DIR) workspace select $(ENV); \
+			terraform -chdir=$(INFRA_DIR) destroy; \
+		else \
+			echo "Aborted."; \
+			exit 1; \
+		fi
+
+# ──────────────────────────────────────────────────────────────────────
+# Deploy
+# ──────────────────────────────────────────────────────────────────────
+
+## deploy: Full deploy (build → tf-apply → frontend S3 sync → CF cache invalidation)
+deploy: build
+	@echo "Deploying to ENV=$(ENV)..."
+	$(MAKE) tf-apply ENV=$(ENV)
+	$(MAKE) deploy-frontend ENV=$(ENV)
+
+## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache
+deploy-frontend:
+	@echo "Deploying frontend to S3 for ENV=$(ENV)..."
+	$(eval BUCKET := $(shell terraform -chdir=$(INFRA_DIR) output -raw frontend_bucket_name 2>/dev/null))
+	$(eval CF_ID  := $(shell terraform -chdir=$(INFRA_DIR) output -raw cloudfront_distribution_id 2>/dev/null))
+	aws s3 sync $(FRONTEND_DIR)/dist s3://$(BUCKET) --delete --profile $(ENV)
+	aws cloudfront create-invalidation --distribution-id $(CF_ID) --paths "/*" --profile $(ENV)
+
+# ──────────────────────────────────────────────────────────────────────
+# Database
+# ──────────────────────────────────────────────────────────────────────
+
+## db-migrate: Apply DDL schema + indexes (ENV=dev|prd)
+db-migrate:
+	@echo "Running DB migrations for ENV=$(ENV)..."
+	@for f in $(DB_DIR)/schema/*.sql; do \
+		echo "Applying $$f..."; \
+		AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f "$$f"; \
+	done
+	@for f in $(DB_DIR)/indexes/*.sql; do \
+		echo "Applying $$f..."; \
+		AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f "$$f"; \
+	done
+
+## db-seed: Insert development seed data (ENV=dev only)
+db-seed:
+	@if [ "$(ENV)" != "dev" ]; then echo "db-seed is only for dev environment"; exit 1; fi
+	@echo "Seeding database for ENV=$(ENV)..."
+	AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f $(DB_DIR)/seeds/001_dev_seed.sql
+
+# ──────────────────────────────────────────────────────────────────────
+# Clean
+# ──────────────────────────────────────────────────────────────────────
+
+## clean: Remove build artifacts
+clean:
+	rm -rf $(FRONTEND_DIR)/dist $(FRONTEND_DIR)/node_modules/.cache
+	rm -rf $(BACKEND_DIR)/.venv $(BACKEND_DIR)/__pycache__
+	rm -f $(LAMBDA_ZIP)
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+# ──────────────────────────────────────────────────────────────────────
+# Help
+# ──────────────────────────────────────────────────────────────────────
+
+## help: Show this help message
+help:
+	@echo "RoutineOps Tracker - Available Make targets:"
+	@echo ""
+	@grep -E '^## ' Makefile | sed 's/## /  /' | column -t -s ':'

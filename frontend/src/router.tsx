@@ -1,0 +1,56 @@
+import { createBrowserRouter } from "react-router-dom";
+import { AppShell } from "@/components/layout/AppShell";
+import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import LoginPage from "@/pages/LoginPage";
+import DashboardPage from "@/pages/DashboardPage";
+import TasksPage from "@/pages/TasksPage";
+import TaskDetailPage from "@/pages/TaskDetailPage";
+import TaskNewPage from "@/pages/TaskNewPage";
+import TaskEditPage from "@/pages/TaskEditPage";
+import ExecutionPage from "@/pages/ExecutionPage";
+import ExecutionLogPage from "@/pages/ExecutionLogPage";
+
+export const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        <AppShell />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <DashboardPage />,
+      },
+      {
+        path: "tasks",
+        element: <TasksPage />,
+      },
+      {
+        path: "tasks/new",
+        element: <TaskNewPage />,
+      },
+      {
+        path: "tasks/:id",
+        element: <TaskDetailPage />,
+      },
+      {
+        path: "tasks/:id/edit",
+        element: <TaskEditPage />,
+      },
+      {
+        path: "executions/:id",
+        element: <ExecutionPage />,
+      },
+      {
+        path: "executions/:id/log",
+        element: <ExecutionLogPage />,
+      },
+    ],
+  },
+]);

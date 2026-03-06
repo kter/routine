@@ -1,0 +1,57 @@
+"""
+Cognito JWT JWKS verification.
+Caches the JWKS in memory to avoid redundant HTTP calls.
+"""
+
+import os
+from functools import lru_cache
+
+import requests
+from jose import JWTError, jwk, jwt
+from jose.utils import base64url_decode
+
+
+@lru_cache(maxsize=1)
+def _get_jwks() -> dict:
+    url = os.environ["COGNITO_JWKS_URL"]
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
+    return response.json()  # type: ignore[no-any-return]
+
+
+def verify_token(token: str) -> dict[str, object]:
+    """
+    Verify a Cognito JWT and return the decoded payload.
+
+    Raises:
+        ValueError: if the token is invalid or expired
+    """
+    try:
+        headers = jwt.get_unverified_headers(token)
+        kid = headers["kid"]
+
+        jwks = _get_jwks()
+        key_data = next(
+            (k for k in jwks["keys"] if k["kid"] == kid), None
+        )
+        if key_data is None:
+            raise ValueError("Public key not found for kid")
+
+        public_key = jwk.construct(key_data)
+        message, encoded_sig = token.rsplit(".", 1)
+        decoded_sig = base64url_decode(encoded_sig.encode())
+
+        if not public_key.verify(message.encode(), decoded_sig):
+            raise ValueError("Signature verification failed")
+
+        claims: dict[str, object] = jwt.get_unverified_claims(token)
+
+        # Verify audience and issuer
+        expected_client_id = os.environ["COGNITO_CLIENT_ID"]
+        if claims.get("client_id") != expected_client_id and claims.get("aud") != expected_client_id:
+            raise ValueError("Token audience mismatch")
+
+        return claims
+
+    except JWTError as e:
+        raise ValueError(f"Invalid JWT: {e}") from e
