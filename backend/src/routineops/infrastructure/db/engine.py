@@ -65,7 +65,7 @@ def get_engine() -> Engine:
         _engine = create_sqlite_engine(db_path)
     else:
         cluster_endpoint = os.environ["DB_CLUSTER_ENDPOINT"]
-        db_name = os.getenv("DB_NAME", "routineops")
+        db_name = os.getenv("DB_NAME", "postgres")
         region = os.getenv("AWS_REGION", "ap-northeast-1")
         logger.info("Using Aurora DSQL engine at %s", cluster_endpoint)
         _engine = create_dsql_engine(cluster_endpoint, db_name, region)

@@ -61,7 +61,7 @@ resource "aws_lambda_function" "post_confirmation" {
   environment {
     variables = {
       DB_CLUSTER_ENDPOINT = var.db_cluster_endpoint
-      DB_NAME             = "routineops"
+      DB_NAME             = "postgres"
     }
   }
 }

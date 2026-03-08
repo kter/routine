@@ -26,12 +26,13 @@ def _get_dsql_token(hostname: str, region: str) -> str:
 
 def _get_db_connection(cluster_endpoint: str, region: str) -> psycopg2.extensions.connection:
     token = _get_dsql_token(cluster_endpoint, region)
+    db_name = os.environ.get("DB_NAME", "postgres")
     conn = psycopg2.connect(
         host=cluster_endpoint,
         port=5432,
         user="admin",
         password=token,
-        dbname="routineops",
+        dbname=db_name,
         sslmode="require",
     )
     return conn
