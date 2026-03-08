@@ -66,9 +66,12 @@ data "aws_route53_zone" "zone" {
 module "cognito" {
   source = "./modules/cognito"
 
-  project     = "routineops"
-  environment = terraform.workspace
-  api_domain  = local.config.api_domain
+  project             = "routineops"
+  environment         = terraform.workspace
+  api_domain          = local.config.api_domain
+  lambda_zip_path     = "${path.root}/../lambda.zip"
+  db_cluster_endpoint = module.aurora_dsql.cluster_endpoint
+  aws_region          = var.aws_region
 }
 
 module "aurora_dsql" {

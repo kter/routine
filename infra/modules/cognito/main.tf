@@ -1,6 +1,85 @@
 ###############################################################################
-# Cognito Module: User Pool + App Client
+# Cognito Module: User Pool + App Client + PostConfirmation Lambda
 ###############################################################################
+
+data "aws_caller_identity" "current" {}
+
+# ── PostConfirmation Lambda IAM Role ────────────────────────────────────────
+
+resource "aws_iam_role" "post_confirmation" {
+  name = "${var.project}-${var.environment}-post-confirmation"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "post_confirmation_basic" {
+  role       = aws_iam_role.post_confirmation.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "post_confirmation_custom" {
+  name = "${var.project}-${var.environment}-post-confirmation-policy"
+  role = aws_iam_role.post_confirmation.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["dsql:DbConnectAdmin"]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cognito-idp:AdminUpdateUserAttributes"]
+        Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
+      },
+    ]
+  })
+}
+
+# ── PostConfirmation Lambda Function ────────────────────────────────────────
+
+resource "aws_lambda_function" "post_confirmation" {
+  function_name = "${var.project}-post-confirmation-${var.environment}"
+  role          = aws_iam_role.post_confirmation.arn
+  handler       = "routineops.infrastructure.auth.post_confirmation_trigger.handler"
+  runtime       = "python3.12"
+  timeout       = 30
+  memory_size   = 256
+
+  filename         = var.lambda_zip_path
+  source_code_hash = filebase64sha256(var.lambda_zip_path)
+
+  environment {
+    variables = {
+      DB_CLUSTER_ENDPOINT = var.db_cluster_endpoint
+      DB_NAME             = "routineops"
+    }
+  }
+}
+
+resource "aws_cloudwatch_log_group" "post_confirmation" {
+  name              = "/aws/lambda/${aws_lambda_function.post_confirmation.function_name}"
+  retention_in_days = 30
+}
+
+resource "aws_lambda_permission" "cognito_invoke" {
+  statement_id  = "AllowCognitoInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.post_confirmation.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
+}
+
+# ── User Pool ───────────────────────────────────────────────────────────────
 
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project}-${var.environment}"
@@ -27,9 +106,15 @@ resource "aws_cognito_user_pool" "main" {
     }
   }
 
+  lambda_config {
+    post_confirmation = aws_lambda_function.post_confirmation.arn
+  }
+
   tags = {
     Name = "${var.project}-${var.environment}-user-pool"
   }
+
+  depends_on = [aws_lambda_permission.cognito_invoke]
 }
 
 resource "aws_cognito_user_pool_client" "main" {

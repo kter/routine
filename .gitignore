@@ -66,6 +66,7 @@ htmlcov/
 # Frontend build
 frontend/dist/
 frontend/.vite/
+frontend/*.tsbuildinfo
 
 # Lambda zip
 lambda.zip
