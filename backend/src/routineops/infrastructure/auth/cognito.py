@@ -3,10 +3,11 @@ Cognito JWT JWKS verification.
 Caches the JWKS in memory to avoid redundant HTTP calls.
 """
 
+import json
 import os
+import urllib.request
 from functools import lru_cache
 
-import requests
 from jose import JWTError, jwk, jwt
 from jose.utils import base64url_decode
 
@@ -14,9 +15,8 @@ from jose.utils import base64url_decode
 @lru_cache(maxsize=1)
 def _get_jwks() -> dict:
     url = os.environ["COGNITO_JWKS_URL"]
-    response = requests.get(url, timeout=5)
-    response.raise_for_status()
-    return response.json()  # type: ignore[no-any-return]
+    with urllib.request.urlopen(url, timeout=5) as response:  # noqa: S310
+        return json.loads(response.read())  # type: ignore[no-any-return]
 
 
 def verify_token(token: str) -> dict[str, object]:

@@ -9,6 +9,7 @@ import TaskDetailPage from "@/pages/TaskDetailPage";
 import TaskNewPage from "@/pages/TaskNewPage";
 import TaskEditPage from "@/pages/TaskEditPage";
 import ExecutionPage from "@/pages/ExecutionPage";
+import ExecutionListPage from "@/pages/ExecutionListPage";
 import ExecutionLogPage from "@/pages/ExecutionLogPage";
 
 export const router = createBrowserRouter([
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: "tasks/:id/edit",
         element: <TaskEditPage />,
+      },
+      {
+        path: "executions",
+        element: <ExecutionListPage />,
       },
       {
         path: "executions/:id",

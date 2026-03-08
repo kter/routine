@@ -2,6 +2,31 @@ import { useState, useEffect } from "react";
 import { executionsApi } from "@/lib/api/executions";
 import type { Execution, CompleteStepRequest } from "../types";
 
+export function useExecutions() {
+  const [executions, setExecutions] = useState<Execution[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetchExecutions = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await executionsApi.list();
+      setExecutions(data);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to fetch executions"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExecutions();
+  }, []);
+
+  return { executions, isLoading, error, refetch: fetchExecutions };
+}
+
 export function useExecution(id: string) {
   const [execution, setExecution] = useState<Execution | null>(null);
   const [isLoading, setIsLoading] = useState(true);

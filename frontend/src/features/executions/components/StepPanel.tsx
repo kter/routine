@@ -36,26 +36,42 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
       (evidenceType === "text" && evidenceText.trim()) ||
       (evidenceType === "image" && evidenceImageKey));
 
+  const inputStyle: React.CSSProperties = {
+    background: "hsl(218 30% 10%)",
+    border: "1px solid hsl(218 28% 20%)",
+    color: "hsl(210 20% 88%)",
+    borderRadius: "0.375rem",
+    outline: "none",
+  };
+
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-6">
+    <div
+      className="space-y-5 rounded-md p-5 animate-fade-up"
+      style={{ background: "hsl(220 40% 8%)", border: "1px solid hsl(218 28% 16%)", borderLeft: "3px solid hsl(43 96% 56%)" }}
+    >
       <div>
-        <h3 className="text-lg font-medium">{title}</h3>
+        <h3 className="font-brand text-base font-700 tracking-tight" style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}>
+          {title}
+        </h3>
         {instruction && (
-          <div className="mt-3">
+          <div className="mt-3 text-sm leading-relaxed" style={{ color: "hsl(215 16% 55%)" }}>
             <MarkdownRenderer content={instruction} />
           </div>
         )}
       </div>
 
       {evidenceType === "text" && step.status === "pending" && (
-        <div className="space-y-1">
-          <label className="block text-sm font-medium">証跡テキスト *</label>
+        <div className="space-y-1.5">
+          <label className="block font-mono-data text-[11px] uppercase tracking-widest" style={{ color: "hsl(215 16% 44%)" }}>
+            証跡テキスト *
+          </label>
           <textarea
             value={evidenceText}
             onChange={(e) => setEvidenceText(e.target.value)}
             rows={4}
             placeholder="実施内容や確認結果を入力してください"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full px-3 py-2 text-sm resize-none focus:ring-1"
+            style={{ ...inputStyle, "--tw-ring-color": "hsl(43 96% 56%)" } as React.CSSProperties}
           />
         </div>
       )}
@@ -68,14 +84,17 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
         />
       )}
 
-      <div className="space-y-1">
-        <label className="block text-sm font-medium">メモ（任意）</label>
+      <div className="space-y-1.5">
+        <label className="block font-mono-data text-[11px] uppercase tracking-widest" style={{ color: "hsl(215 16% 38%)" }}>
+          メモ（任意）
+        </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
           placeholder="補足事項があれば入力"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full px-3 py-2 text-sm resize-none"
+          style={inputStyle}
         />
       </div>
 
@@ -84,7 +103,11 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
           <button
             onClick={handleComplete}
             disabled={!canComplete || isSubmitting}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="rounded px-5 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-40"
+            style={{
+              color: "hsl(222 47% 5%)",
+              background: canComplete && !isSubmitting ? "hsl(43 96% 56%)" : "hsl(43 60% 30%)",
+            }}
           >
             {isSubmitting ? "処理中..." : "完了"}
           </button>
@@ -92,7 +115,11 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
             <button
               onClick={onSkip}
               disabled={isSubmitting}
-              className="rounded-md border px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
+              className="rounded px-5 py-2 text-sm transition-all duration-150 disabled:opacity-40"
+              style={{
+                color: "hsl(215 16% 55%)",
+                border: "1px solid hsl(218 28% 22%)",
+              }}
             >
               スキップ
             </button>

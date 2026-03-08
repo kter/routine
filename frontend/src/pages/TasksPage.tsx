@@ -8,26 +8,46 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">タスク管理</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="font-brand text-lg font-700 tracking-tight" style={{ fontWeight: 700 }}>
+          タスク管理
+        </h1>
         <Link
           to="/tasks/new"
-          className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all duration-150"
+          style={{
+            color: "hsl(222 47% 5%)",
+            background: "hsl(43 96% 56%)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "hsl(43 96% 64%)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "hsl(43 96% 56%)";
+          }}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           新規作成
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="flex h-32 items-center justify-center">
-          <p className="text-sm text-muted-foreground">読み込み中...</p>
+        <div className="space-y-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-24 rounded-md shimmer" style={{ opacity: 1 - i * 0.2 }} />
+          ))}
         </div>
       ) : error ? (
-        <div className="flex h-32 flex-col items-center justify-center gap-2">
-          <p className="text-sm text-destructive">データの取得に失敗しました</p>
-          <button onClick={refetch} className="text-sm text-primary hover:underline">
-            再試行
+        <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md" style={{ border: "1px solid hsl(218 28% 14%)" }}>
+          <p className="font-mono-data text-sm" style={{ color: "hsl(0 72% 54%)" }}>
+            ERR: データの取得に失敗しました
+          </p>
+          <button
+            onClick={refetch}
+            className="font-mono-data text-xs hover:underline"
+            style={{ color: "hsl(43 96% 56%)" }}
+          >
+            再試行 →
           </button>
         </div>
       ) : (
