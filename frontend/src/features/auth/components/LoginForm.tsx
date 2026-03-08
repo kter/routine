@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Link } from "react-router-dom";
 import { signIn } from "@/lib/auth/cognito";
 import { useAuth } from "../hooks/useAuth";
 
@@ -64,6 +65,12 @@ export function LoginForm() {
       >
         {isSubmitting ? "ログイン中..." : "ログイン"}
       </button>
+      <p className="text-center text-sm text-muted-foreground">
+        アカウント作成は{" "}
+        <Link to="/register" className="text-primary underline-offset-4 hover:underline">
+          こちら
+        </Link>
+      </p>
     </form>
   );
 }

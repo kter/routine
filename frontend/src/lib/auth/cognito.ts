@@ -2,6 +2,8 @@ import { Amplify } from "aws-amplify";
 import {
   signIn as amplifySignIn,
   signOut as amplifySignOut,
+  signUp as amplifySignUp,
+  confirmSignUp as amplifyConfirmSignUp,
   getCurrentUser as amplifyGetCurrentUser,
   fetchAuthSession,
 } from "aws-amplify/auth";
@@ -18,6 +20,14 @@ Amplify.configure({
 
 export async function signIn(email: string, password: string): Promise<void> {
   await amplifySignIn({ username: email, password });
+}
+
+export async function signUp(email: string, password: string): Promise<void> {
+  await amplifySignUp({ username: email, password });
+}
+
+export async function confirmSignUp(email: string, code: string): Promise<void> {
+  await amplifyConfirmSignUp({ username: email, confirmationCode: code });
 }
 
 export async function signOut(): Promise<void> {
