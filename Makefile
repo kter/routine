@@ -162,10 +162,18 @@ tf-destroy:
 # Deploy
 # ──────────────────────────────────────────────────────────────────────
 
-## deploy: Full deploy (build → tf-apply → frontend S3 sync → CF cache invalidation)
-deploy: build
+## deploy: Full deploy (frontend build || lambda build → tf-init → tf-plan → tf-apply → frontend S3 sync → CF cache invalidation)
+deploy:
 	@echo "Deploying to ENV=$(ENV)..."
-	$(MAKE) tf-apply ENV=$(ENV)
+	@frontend_pid=""; \
+	trap 'if [ -n "$$frontend_pid" ]; then kill $$frontend_pid 2>/dev/null || true; fi' EXIT; \
+	$(MAKE) build-frontend & \
+	frontend_pid=$$!; \
+	$(MAKE) build-lambda; \
+	$(MAKE) tf-init ENV=$(ENV); \
+	$(MAKE) tf-plan ENV=$(ENV); \
+	$(MAKE) tf-apply ENV=$(ENV); \
+	wait $$frontend_pid; \
 	$(MAKE) deploy-frontend ENV=$(ENV)
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache
