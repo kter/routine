@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-unit test-integration \
+        test test-unit test-integration test-e2e \
         lint lint-frontend lint-backend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         build build-frontend build-lambda \
@@ -51,6 +51,13 @@ test-unit:
 ## test-integration: Run integration tests only
 test-integration:
 	cd $(BACKEND_DIR) && uv run pytest $(CURDIR)/$(TESTS_DIR)/integration -v --tb=short
+
+## test-e2e: Run E2E tests against dev environment (requires E2E_TEST_USER_EMAIL and E2E_TEST_USER_PASSWORD)
+test-e2e:
+	@echo "Running E2E tests against dev environment..."
+	@export E2E_TEST_USER_EMAIL=$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
+	export E2E_TEST_USER_PASSWORD=$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
+	npx playwright test --config=playwright.config.ts
 
 # ──────────────────────────────────────────────────────────────────────
 # Lint
@@ -155,10 +162,18 @@ tf-destroy:
 # Deploy
 # ──────────────────────────────────────────────────────────────────────
 
-## deploy: Full deploy (build → tf-apply → frontend S3 sync → CF cache invalidation)
-deploy: build
+## deploy: Full deploy (frontend build || lambda build → tf-init → tf-plan → tf-apply → frontend S3 sync → CF cache invalidation)
+deploy:
 	@echo "Deploying to ENV=$(ENV)..."
-	$(MAKE) tf-apply ENV=$(ENV)
+	@frontend_pid=""; \
+	trap 'if [ -n "$$frontend_pid" ]; then kill $$frontend_pid 2>/dev/null || true; fi' EXIT; \
+	$(MAKE) build-frontend & \
+	frontend_pid=$$!; \
+	$(MAKE) build-lambda; \
+	$(MAKE) tf-init ENV=$(ENV); \
+	$(MAKE) tf-plan ENV=$(ENV); \
+	$(MAKE) tf-apply ENV=$(ENV); \
+	wait $$frontend_pid; \
 	$(MAKE) deploy-frontend ENV=$(ENV)
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache

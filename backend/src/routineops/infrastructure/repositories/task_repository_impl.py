@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -151,6 +152,13 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
 
     @staticmethod
     def _to_domain(m: TaskModel) -> Task:
+        # Aurora DSQL returns TEXT columns as strings; parse JSON if needed
+        tags = m.tags
+        if isinstance(tags, str):
+            tags = json.loads(tags)
+        metadata = m.metadata_
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
         return Task(
             id=m.id,
             tenant_id=m.tenant_id,
@@ -160,8 +168,8 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
             timezone=m.timezone,
             estimated_minutes=m.estimated_minutes,
             is_active=m.is_active,
-            tags=list(m.tags or []),
-            metadata=dict(m.metadata_ or {}),
+            tags=list(tags or []),
+            metadata=dict(metadata or {}),
             created_by=m.created_by,
             created_at=m.created_at,
             updated_at=m.updated_at,
