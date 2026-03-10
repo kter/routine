@@ -1,6 +1,6 @@
 """Unit tests for TaskUsecases with mocked repository."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
@@ -12,7 +12,6 @@ from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
 from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 from routineops.usecases.task_usecases import TaskUsecases
-
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 USER_SUB = "user-sub-123"
@@ -31,8 +30,8 @@ def make_task(task_id: UUID | None = None) -> Task:
         tags=["security"],
         metadata={},
         created_by=USER_SUB,
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
         steps=[],
     )
 
@@ -55,8 +54,8 @@ def make_step(
         instruction=instruction,
         evidence_type=evidence_type,
         is_required=is_required,
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -169,6 +168,21 @@ class TestCreateTask:
 
         mock_repo.create.assert_called_once()
 
+    def test_normalizes_blank_timezone_to_asia_tokyo(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        mock_repo.create.side_effect = lambda created_task: created_task
+
+        result = usecases.create_task(
+            tenant_id=TENANT_ID,
+            title="timezone test",
+            cron_expression="0 10 * * *",
+            created_by=USER_SUB,
+            timezone="",
+        )
+
+        assert result.timezone == "Asia/Tokyo"
+
 
 class TestDeleteTask:
     def test_deletes_existing_task(
@@ -276,6 +290,17 @@ class TestUpdateTask:
         assert updated_task.steps[0].is_required is False
         assert updated_task.steps[0].id != persisted_step.id
         assert result.steps == [persisted_step]
+
+    def test_normalizes_blank_timezone_on_update(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        result = usecases.update_task(TENANT_ID, task.id, timezone="")
+
+        assert result.timezone == "Asia/Tokyo"
 
     def test_clears_steps_when_empty_list_is_provided(
         self, usecases: TaskUsecases, mock_repo: MagicMock

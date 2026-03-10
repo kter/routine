@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
+import pytz
+
 from routineops.domain.entities.task import Step, Task
-from routineops.domain.exceptions import NotFoundError, ValidationError
+from routineops.domain.exceptions import NotFoundError
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
 from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
@@ -35,6 +37,7 @@ class TaskUsecases:
     ) -> Task:
         cron = CronExpression(cron_expression)
         now = datetime.now(tz=timezone_utc())
+        normalized_timezone = normalize_timezone_name(timezone)
 
         task = Task(
             id=uuid4(),
@@ -42,7 +45,7 @@ class TaskUsecases:
             title=title,
             description=description,
             cron_expression=cron,
-            timezone=timezone,
+            timezone=normalized_timezone,
             estimated_minutes=estimated_minutes,
             is_active=True,
             tags=tags or [],
@@ -71,6 +74,8 @@ class TaskUsecases:
         steps_to_update = kwargs.pop("steps") if has_steps_update else None
         if "cron_expression" in kwargs:
             kwargs["cron_expression"] = CronExpression(str(kwargs["cron_expression"]))
+        if "timezone" in kwargs:
+            kwargs["timezone"] = normalize_timezone_name(kwargs["timezone"])
 
         for key, value in kwargs.items():
             if hasattr(task, key):
@@ -133,4 +138,13 @@ class TaskUsecases:
 
 
 def timezone_utc() -> timezone:
-    return timezone.utc
+    return UTC
+
+
+def normalize_timezone_name(value: object) -> str:
+    timezone_name = str(value or "").strip() or "Asia/Tokyo"
+    try:
+        pytz.timezone(timezone_name)
+    except pytz.UnknownTimeZoneError:
+        return "Asia/Tokyo"
+    return timezone_name
