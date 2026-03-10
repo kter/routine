@@ -1,6 +1,4 @@
 """Integration tests for Executions API - wizard flow E2E."""
-
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -54,6 +52,37 @@ class TestStartExecution:
 
         assert execution["steps"][0]["step_snapshot"]["title"] == "必須ステップ"
         assert execution["steps"][0]["status"] == "pending"
+
+    def test_snapshots_updated_steps_after_task_edit(self, client: TestClient) -> None:
+        task = create_task_with_steps(client)
+
+        update_resp = client.patch(
+            f"/api/v1/tasks/{task['id']}",
+            json={
+                "steps": [
+                    {
+                        "position": 1,
+                        "title": "更新後ステップ",
+                        "instruction": "更新後の手順",
+                        "evidence_type": "image",
+                        "is_required": False,
+                    }
+                ]
+            },
+        )
+        assert update_resp.status_code == 200
+
+        resp = client.post("/api/v1/executions", json={"task_id": task["id"]})
+        execution = resp.json()
+
+        assert resp.status_code == 201
+        assert len(execution["steps"]) == 1
+        assert execution["steps"][0]["step_snapshot"] == {
+            "title": "更新後ステップ",
+            "instruction": "更新後の手順",
+            "evidence_type": "image",
+            "is_required": False,
+        }
 
     def test_returns_404_for_missing_task(self, client: TestClient) -> None:
         resp = client.post(

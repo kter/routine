@@ -6,9 +6,11 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from routineops.domain.entities.task import Task
+from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.cron_expression import CronExpression
+from routineops.domain.value_objects.evidence_type import EvidenceType
+from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 from routineops.usecases.task_usecases import TaskUsecases
 
 
@@ -35,9 +37,32 @@ def make_task(task_id: UUID | None = None) -> Task:
     )
 
 
+def make_step(
+    task_id: UUID,
+    *,
+    title: str = "確認ステップ",
+    instruction: str = "ログを確認してください",
+    evidence_type: EvidenceType = EvidenceType.TEXT,
+    is_required: bool = True,
+    position: int = 1,
+) -> Step:
+    return Step(
+        id=uuid4(),
+        tenant_id=TENANT_ID,
+        task_id=task_id,
+        position=position,
+        title=title,
+        instruction=instruction,
+        evidence_type=evidence_type,
+        is_required=is_required,
+        created_at=datetime.now(tz=timezone.utc),
+        updated_at=datetime.now(tz=timezone.utc),
+    )
+
+
 @pytest.fixture
 def mock_repo() -> MagicMock:
-    return MagicMock()
+    return MagicMock(spec=TaskRepositoryPort)
 
 
 @pytest.fixture
@@ -111,36 +136,38 @@ class TestCreateTask:
     def test_creates_steps_when_provided(
         self, usecases: TaskUsecases, mock_repo: MagicMock
     ) -> None:
-        task = make_task()
-        task.steps = []
-        mock_repo.create.return_value = task
+        mock_repo.create.side_effect = lambda created_task: created_task
 
-        from routineops.domain.entities.task import Step
-        from routineops.domain.value_objects.evidence_type import EvidenceType
-
-        step = Step(
-            id=uuid4(),
-            tenant_id=TENANT_ID,
-            task_id=task.id,
-            position=1,
-            title="確認ステップ",
-            instruction="ログを確認してください",
-            evidence_type=EvidenceType.TEXT,
-            is_required=True,
-            created_at=datetime.now(tz=timezone.utc),
-            updated_at=datetime.now(tz=timezone.utc),
-        )
-        mock_repo.create_step.return_value = step
-
-        usecases.create_task(
+        result = usecases.create_task(
             tenant_id=TENANT_ID,
             title="テストタスク",
             cron_expression="0 10 * * *",
             created_by=USER_SUB,
-            steps=[{"position": 1, "title": "確認ステップ", "evidence_type": "text"}],
+            steps=[{"position": 1, "title": "確認ステップ"}],
         )
 
-        mock_repo.create_step.assert_called_once()
+        created_task = mock_repo.create.call_args.args[0]
+        assert len(created_task.steps) == 1
+        assert created_task.steps[0].title == "確認ステップ"
+        assert created_task.steps[0].instruction == ""
+        assert created_task.steps[0].evidence_type == EvidenceType.NONE
+        assert created_task.steps[0].is_required is True
+        assert result.steps == created_task.steps
+
+    def test_uses_single_create_repository_api_for_steps(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        mock_repo.create.side_effect = lambda created_task: created_task
+
+        usecases.create_task(
+            tenant_id=TENANT_ID,
+            title="集約作成タスク",
+            cron_expression="0 10 * * *",
+            created_by=USER_SUB,
+            steps=[{"position": 1, "title": "集約手順"}],
+        )
+
+        mock_repo.create.assert_called_once()
 
 
 class TestDeleteTask:
@@ -161,3 +188,141 @@ class TestDeleteTask:
 
         with pytest.raises(NotFoundError):
             usecases.delete_task(TENANT_ID, uuid4())
+
+
+class TestUpdateTask:
+    def test_distinguishes_omitted_steps_from_explicit_empty_list(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        kept_task = make_task()
+        kept_step = make_step(kept_task.id, title="保持対象")
+        kept_task.steps = [kept_step]
+
+        cleared_task = make_task()
+        cleared_task.steps = [make_step(cleared_task.id, title="削除対象")]
+
+        mock_repo.get_with_steps.side_effect = [kept_task, cleared_task]
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        kept_result = usecases.update_task(TENANT_ID, kept_task.id, title="手順は保持")
+        cleared_result = usecases.update_task(TENANT_ID, cleared_task.id, steps=[])
+
+        kept_update = mock_repo.update.call_args_list[0].args[0]
+        cleared_update = mock_repo.update.call_args_list[1].args[0]
+
+        assert kept_update.steps == [kept_step]
+        assert kept_result.steps == [kept_step]
+        assert cleared_update.steps == []
+        assert cleared_result.steps == []
+
+    def test_keeps_existing_steps_when_steps_are_not_provided(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        existing_step = make_step(
+            task.id,
+            title="既存手順",
+            instruction="保持される説明",
+        )
+        task.steps = [existing_step]
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        result = usecases.update_task(TENANT_ID, task.id, title="更新後タイトル")
+
+        updated_task = mock_repo.update.call_args.args[0]
+        assert updated_task.title == "更新後タイトル"
+        assert updated_task.steps == [existing_step]
+        assert result.steps == [existing_step]
+
+    def test_replaces_steps_with_domain_entities_when_steps_are_provided(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        task.steps = [make_step(task.id, title="旧手順")]
+        replaced_task = make_task(task.id)
+        persisted_step = make_step(
+            task.id,
+            title="新手順",
+            instruction="更新後の説明",
+            evidence_type=EvidenceType.IMAGE,
+            is_required=False,
+        )
+        replaced_task.steps = [persisted_step]
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.return_value = replaced_task
+
+        result = usecases.update_task(
+            TENANT_ID,
+            task.id,
+            steps=[
+                {
+                    "position": 1,
+                    "title": "新手順",
+                    "instruction": "更新後の説明",
+                    "evidence_type": "image",
+                    "is_required": False,
+                }
+            ],
+        )
+
+        updated_task = mock_repo.update.call_args.args[0]
+        assert len(updated_task.steps) == 1
+        assert isinstance(updated_task.steps[0], Step)
+        assert updated_task.steps[0].task_id == task.id
+        assert updated_task.steps[0].title == "新手順"
+        assert updated_task.steps[0].instruction == "更新後の説明"
+        assert updated_task.steps[0].evidence_type == EvidenceType.IMAGE
+        assert updated_task.steps[0].is_required is False
+        assert updated_task.steps[0].id != persisted_step.id
+        assert result.steps == [persisted_step]
+
+    def test_clears_steps_when_empty_list_is_provided(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        task.steps = [make_step(task.id)]
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        result = usecases.update_task(TENANT_ID, task.id, steps=[])
+
+        updated_task = mock_repo.update.call_args.args[0]
+        assert updated_task.steps == []
+        assert result.steps == []
+
+    def test_uses_same_step_defaults_when_updating(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        result = usecases.update_task(
+            TENANT_ID,
+            task.id,
+            steps=[{"position": 1, "title": "既定値テスト"}],
+        )
+
+        updated_task = mock_repo.update.call_args.args[0]
+        assert updated_task.steps[0].instruction == ""
+        assert updated_task.steps[0].evidence_type == EvidenceType.NONE
+        assert updated_task.steps[0].is_required is True
+        assert result.steps[0].title == "既定値テスト"
+
+    def test_uses_single_update_repository_api_when_steps_change(
+        self, usecases: TaskUsecases, mock_repo: MagicMock
+    ) -> None:
+        task = make_task()
+        task.steps = [make_step(task.id, title="旧手順")]
+        mock_repo.get_with_steps.return_value = task
+        mock_repo.update.side_effect = lambda updated_task: updated_task
+
+        result = usecases.update_task(
+            TENANT_ID,
+            task.id,
+            steps=[{"position": 1, "title": "新手順"}],
+        )
+
+        mock_repo.update.assert_called_once()
+        assert result.steps[0].title == "新手順"
