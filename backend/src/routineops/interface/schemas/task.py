@@ -62,3 +62,4 @@ class UpdateTaskRequest(BaseModel):
     estimated_minutes: int | None = Field(default=None, ge=1)
     is_active: bool | None = None
     tags: list[str] | None = None
+    steps: list[CreateStepRequest] | None = None

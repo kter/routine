@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from routineops.domain.entities.task import Task, Step
+from routineops.domain.entities.task import Task
 
 
 class TaskRepositoryPort(ABC):
@@ -29,20 +29,4 @@ class TaskRepositoryPort(ABC):
 
     @abstractmethod
     def delete(self, tenant_id: UUID, task_id: UUID) -> None:
-        ...
-
-    @abstractmethod
-    def list_steps(self, tenant_id: UUID, task_id: UUID) -> list[Step]:
-        ...
-
-    @abstractmethod
-    def create_step(self, step: Step) -> Step:
-        ...
-
-    @abstractmethod
-    def update_step(self, step: Step) -> Step:
-        ...
-
-    @abstractmethod
-    def delete_step(self, tenant_id: UUID, step_id: UUID) -> None:
         ...
