@@ -267,35 +267,42 @@ playwright-cli tracing-stop
 playwright-cli close
 ```
 
-## Project: RoutineOps Dev Environment Login
+## Example: Dev environment login (notes.dev.devtools.site)
 
-Dev環境のWebサイト (`https://routine.dev.devtools.site`) にログインする際は以下の手順を使用:
+Credentials are stored in `frontend/.env.local`. Read the file first:
 
 ```bash
-# Dev環境にログイン (認証情報は frontend/.env.local より)
-playwright-cli open https://routine.dev.devtools.site
-playwright-cli snapshot
-
-# ログインフォームにメールアドレスとパスワードを入力 (frontend/.env.local より取得)
-# E2E_TEST_USER_EMAIL と E2E_TEST_USER_PASSWORD を読み込む
-playwright-cli fill <email-input-ref> "$(grep E2E_TEST_USER_EMAIL frontend/.env.local | cut -d= -f2)"
-playwright-cli fill <password-input-ref> "$(grep E2E_TEST_USER_PASSWORD frontend/.env.local | cut -d= -f2)"
-playwright-cli click <login-button-ref>
-playwright-cli snapshot
-
-# ログイン後、状態を保存しておくと再利用できる
-playwright-cli state-save .playwright-cli/dev-auth.json
+cat frontend/.env.local
+# E2E_TEST_USER_EMAIL=...
+# E2E_TEST_USER_PASSWORD=...
 ```
 
-次回以降のログイン省略:
+Then log in using those values:
+
 ```bash
-playwright-cli open https://routine.dev.devtools.site
-playwright-cli state-load .playwright-cli/dev-auth.json
-playwright-cli goto https://routine.dev.devtools.site
+playwright-cli open https://notes.dev.devtools.site/login/
+playwright-cli snapshot
+
+# Fill in credentials from frontend/.env.local
+playwright-cli fill [login-email-input testid] "<E2E_TEST_USER_EMAIL>"
+playwright-cli fill [login-password-input testid] "<E2E_TEST_USER_PASSWORD>"
+playwright-cli click [login-submit-button testid]
 playwright-cli snapshot
 ```
 
-> 認証情報の取得元: `frontend/.env.local` (gitignore済み) の `E2E_TEST_USER_EMAIL` / `E2E_TEST_USER_PASSWORD`
+- URL: `https://notes.dev.devtools.site`
+- Credentials file: `frontend/.env.local` (keys: `E2E_TEST_USER_EMAIL`, `E2E_TEST_USER_PASSWORD`)
+
+Login form uses `data-testid` attributes: `login-email-input`, `login-password-input`, `login-submit-button`.
+After login, the page redirects to `/` and shows the sidebar with Folders heading or All Notes button.
+
+Save auth state after login to reuse across commands:
+```bash
+playwright-cli state-save auth-dev.json
+# Later sessions:
+playwright-cli state-load auth-dev.json
+playwright-cli goto https://notes.dev.devtools.site/
+```
 
 ## Specific tasks
 
