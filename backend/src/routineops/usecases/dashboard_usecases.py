@@ -1,13 +1,13 @@
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytz
 from croniter import croniter
 
 from routineops.domain.entities.task import Task
-from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
-from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
 from routineops.domain.value_objects.execution_status import ExecutionStatus
+from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
+from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 
 
 class DashboardItem:
@@ -50,10 +50,9 @@ class DashboardUsecases:
         self._exec_repo = exec_repo
 
     def get_dashboard(self, tenant_id: UUID) -> DashboardData:
-        now_utc = datetime.now(tz=timezone.utc)
-        today_start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
-        week_end = today_start + timedelta(days=8)
+        now_utc = datetime.now(tz=UTC)
+        search_start = now_utc - timedelta(days=7)
+        week_end = now_utc + timedelta(days=8)
 
         tasks = self._task_repo.list(tenant_id, active_only=True)
 
@@ -68,8 +67,10 @@ class DashboardUsecases:
         upcoming_items: list[DashboardItem] = []
 
         for task in tasks:
+            task_tz = pytz.timezone(task.timezone)
+            today_local = now_utc.astimezone(task_tz).date()
             occurrences = self._get_upcoming_occurrences(
-                task, now_utc - timedelta(days=7), week_end
+                task, search_start, week_end
             )
             task_execs = exec_by_task.get(task.id, [])
 
@@ -86,11 +87,13 @@ class DashboardUsecases:
                     status=matching_exec.status if matching_exec else None,
                 )
 
-                if occ < today_start:
+                occ_local = occ.astimezone(task_tz).date()
+
+                if occ_local < today_local:
                     # Overdue: past occurrences without completed execution
                     if not matching_exec or matching_exec.status == ExecutionStatus.IN_PROGRESS:
                         overdue_items.append(item)
-                elif today_start <= occ < today_end:
+                elif occ_local == today_local:
                     today_items.append(item)
                 else:
                     upcoming_items.append(item)
@@ -107,14 +110,13 @@ class DashboardUsecases:
         try:
             tz = pytz.timezone(task.timezone)
             start_local = start.astimezone(tz)
-            end_local = end.astimezone(tz)
             cron = croniter(str(task.cron_expression), start_local - timedelta(seconds=1))
             occurrences = []
             while True:
                 occ = cron.get_next(datetime)
                 if occ.tzinfo is None:
                     occ = tz.localize(occ)
-                occ_utc = occ.astimezone(timezone.utc)
+                occ_utc = occ.astimezone(UTC)
                 if occ_utc > end:
                     break
                 occurrences.append(occ_utc)
@@ -126,6 +128,8 @@ class DashboardUsecases:
         # Find execution within 1 hour window of the scheduled time
         window = timedelta(hours=1)
         for e in executions:
-            if e.scheduled_for and abs((e.scheduled_for - scheduled_for).total_seconds()) < window.total_seconds():
+            if e.scheduled_for and abs(
+                (e.scheduled_for - scheduled_for).total_seconds()
+            ) < window.total_seconds():
                 return e
         return None

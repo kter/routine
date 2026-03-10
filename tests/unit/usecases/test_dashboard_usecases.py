@@ -1,7 +1,7 @@
 """Unit tests for DashboardUsecases - cron evaluation logic."""
 
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock
+from datetime import UTC, datetime
+from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -26,8 +26,8 @@ def make_task(cron: str = "0 10 * * *") -> Task:
         tags=[],
         metadata={},
         created_by="user",
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
         steps=[],
     )
 
@@ -93,3 +93,35 @@ class TestGetDashboard:
 
         mock_task_repo.list.assert_called_once_with(TENANT_ID, active_only=True)
         assert result.today == []
+
+    def test_classifies_today_using_task_timezone_not_utc(
+        self,
+        usecases: DashboardUsecases,
+        mock_task_repo: MagicMock,
+        mock_exec_repo: MagicMock,
+    ) -> None:
+        task = make_task("0 10 * * *")
+        mock_task_repo.list.return_value = [task]
+        mock_exec_repo.list.return_value = []
+
+        fixed_now = datetime(2026, 3, 10, 23, 0, tzinfo=UTC)
+
+        class FixedDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):  # type: ignore[override]
+                if tz is None:
+                    return fixed_now.replace(tzinfo=None)
+                return fixed_now.astimezone(tz)
+
+        with patch("routineops.usecases.dashboard_usecases.datetime", FixedDateTime):
+            result = usecases.get_dashboard(TENANT_ID)
+
+        assert datetime(2026, 3, 10, 1, 0, tzinfo=UTC) not in {
+            item.scheduled_for for item in result.today
+        }
+        assert datetime(2026, 3, 10, 1, 0, tzinfo=UTC) in {
+            item.scheduled_for for item in result.overdue
+        }
+        assert datetime(2026, 3, 11, 1, 0, tzinfo=UTC) in {
+            item.scheduled_for for item in result.today
+        }
