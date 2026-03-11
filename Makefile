@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-unit test-integration test-e2e \
+        test test-unit test-integration test-e2e smoke-deploy \
         lint lint-frontend lint-backend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         build build-frontend build-lambda \
@@ -55,9 +55,21 @@ test-integration:
 ## test-e2e: Run E2E tests against dev environment (requires E2E_TEST_USER_EMAIL and E2E_TEST_USER_PASSWORD)
 test-e2e:
 	@echo "Running E2E tests against dev environment..."
-	@export E2E_TEST_USER_EMAIL=$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
-	export E2E_TEST_USER_PASSWORD=$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
+	@export E2E_TEST_USER_EMAIL="$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	export E2E_TEST_USER_PASSWORD="$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
 	npx playwright test --config=playwright.config.ts
+
+## smoke-deploy: Run authenticated dashboard smoke test against the deployed frontend (ENV=dev|prd)
+smoke-deploy:
+	@echo "Running post-deploy smoke test for ENV=$(ENV)..."
+	@terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null && \
+	export PLAYWRIGHT_BASE_URL=$$(terraform -chdir=$(INFRA_DIR) output -raw frontend_url 2>/dev/null) && \
+	export E2E_TEST_USER_EMAIL="$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	export E2E_TEST_USER_PASSWORD="$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	test -n "$$PLAYWRIGHT_BASE_URL" && \
+	test -n "$$E2E_TEST_USER_EMAIL" && \
+	test -n "$$E2E_TEST_USER_PASSWORD" && \
+	npx playwright test --config=playwright.config.ts tests/e2e/deploy-smoke.spec.ts --project=chromium
 
 # ──────────────────────────────────────────────────────────────────────
 # Lint
@@ -103,9 +115,20 @@ fmt-frontend:
 ## build: Build frontend + Lambda zip
 build: build-frontend build-lambda
 
-## build-frontend: Build React SPA for production
+## build-frontend: Build React SPA using Terraform outputs for the selected ENV when available
 build-frontend:
-	cd $(FRONTEND_DIR) && npm run build
+	@echo "Building frontend for ENV=$(ENV)..."
+	@if terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null 2>&1 && \
+		terraform -chdir=$(INFRA_DIR) output -raw api_url >/dev/null 2>&1; then \
+		cd $(FRONTEND_DIR) && \
+		VITE_API_BASE_URL="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw api_url)" \
+		VITE_COGNITO_USER_POOL_ID="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw cognito_user_pool_id)" \
+		VITE_COGNITO_CLIENT_ID="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw cognito_client_id)" \
+		npm run build; \
+	else \
+		echo "Terraform outputs for ENV=$(ENV) are unavailable; using frontend/.env defaults."; \
+		cd $(FRONTEND_DIR) && npm run build; \
+	fi
 
 ## build-lambda: Package backend as Lambda zip
 build-lambda:
@@ -162,23 +185,22 @@ tf-destroy:
 # Deploy
 # ──────────────────────────────────────────────────────────────────────
 
-## deploy: Full deploy (frontend build || lambda build → tf-init → tf-plan → tf-apply → frontend S3 sync → CF cache invalidation)
+## deploy: Full deploy (lambda build → tf-init → tf-plan → tf-apply → frontend build → S3 sync → CF cache invalidation)
 deploy:
 	@echo "Deploying to ENV=$(ENV)..."
-	@frontend_pid=""; \
-	trap 'if [ -n "$$frontend_pid" ]; then kill $$frontend_pid 2>/dev/null || true; fi' EXIT; \
-	$(MAKE) build-frontend & \
-	frontend_pid=$$!; \
 	$(MAKE) build-lambda; \
 	$(MAKE) tf-init ENV=$(ENV); \
 	$(MAKE) tf-plan ENV=$(ENV); \
 	$(MAKE) tf-apply ENV=$(ENV); \
-	wait $$frontend_pid; \
-	$(MAKE) deploy-frontend ENV=$(ENV)
+	$(MAKE) db-migrate ENV=$(ENV); \
+	$(MAKE) build-frontend ENV=$(ENV); \
+	$(MAKE) deploy-frontend ENV=$(ENV); \
+	if [ "$(ENV)" = "dev" ]; then $(MAKE) smoke-deploy ENV=$(ENV); fi
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache
 deploy-frontend:
 	@echo "Deploying frontend to S3 for ENV=$(ENV)..."
+	@terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null
 	$(eval BUCKET := $(shell terraform -chdir=$(INFRA_DIR) output -raw frontend_bucket_name 2>/dev/null))
 	$(eval CF_ID  := $(shell terraform -chdir=$(INFRA_DIR) output -raw cloudfront_distribution_id 2>/dev/null))
 	aws s3 sync $(FRONTEND_DIR)/dist s3://$(BUCKET) --delete --profile $(ENV)
@@ -191,14 +213,7 @@ deploy-frontend:
 ## db-migrate: Apply DDL schema + indexes (ENV=dev|prd)
 db-migrate:
 	@echo "Running DB migrations for ENV=$(ENV)..."
-	@AWS_PROFILE=$(ENV) cd $(BACKEND_DIR) && uv run python -c "\
-import boto3, psycopg2, glob, os; \
-endpoint = os.environ['DB_CLUSTER_ENDPOINT']; \
-token = boto3.client('dsql', region_name=os.getenv('AWS_REGION','ap-northeast-1')).generate_db_connect_admin_auth_token(Hostname=endpoint, Region=os.getenv('AWS_REGION','ap-northeast-1')); \
-conn = psycopg2.connect(host=endpoint, port=5432, user='admin', password=token, dbname='postgres', sslmode='require'); \
-conn.autocommit = True; cur = conn.cursor(); \
-[cur.execute(s.strip()) for f in sorted(glob.glob('../$(DB_DIR)/schema/*.sql')) + sorted(glob.glob('../$(DB_DIR)/indexes/*.sql')) for s in open(f).read().split(';') if s.strip() and not s.strip().startswith('--')]; \
-cur.close(); conn.close(); print('Migrations complete.')"
+	@cd $(BACKEND_DIR) && AWS_PROFILE=$(ENV) ENV=$(ENV) uv run python scripts/db_migrate.py
 
 ## db-seed: Insert development seed data (ENV=dev only)
 db-seed:

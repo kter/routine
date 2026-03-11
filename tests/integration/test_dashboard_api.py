@@ -1,7 +1,11 @@
 """Integration tests for Dashboard API."""
 
-import pytest
+from uuid import UUID
+
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from routineops.infrastructure.db.models.task_model import TaskModel
 
 
 class TestDashboardApi:
@@ -47,3 +51,26 @@ class TestDashboardApi:
         all_items = data["today"] + data["overdue"] + data["upcoming"]
         titles = [item["title"] for item in all_items]
         assert "無効タスク" not in titles
+
+    def test_dashboard_tolerates_invalid_timezone_data(
+        self,
+        client: TestClient,
+        db_session: Session,
+    ) -> None:
+        create_resp = client.post(
+            "/api/v1/tasks",
+            json={"title": "不正timezoneタスク", "cron_expression": "0 10 * * *"},
+        )
+        task_id = UUID(create_resp.json()["id"])
+
+        task = db_session.query(TaskModel).filter(TaskModel.id == task_id).one()
+        task.timezone = ""
+        db_session.commit()
+
+        resp = client.get("/api/v1/dashboard")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        all_items = data["today"] + data["overdue"] + data["upcoming"]
+        titles = [item["title"] for item in all_items]
+        assert "不正timezoneタスク" in titles

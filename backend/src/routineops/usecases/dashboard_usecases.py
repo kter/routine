@@ -1,13 +1,17 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytz
 from croniter import croniter
+from pytz import BaseTzInfo
 
 from routineops.domain.entities.task import Task
 from routineops.domain.value_objects.execution_status import ExecutionStatus
 from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
 from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardItem:
@@ -67,7 +71,7 @@ class DashboardUsecases:
         upcoming_items: list[DashboardItem] = []
 
         for task in tasks:
-            task_tz = pytz.timezone(task.timezone)
+            task_tz = _resolve_task_timezone(task.timezone)
             today_local = now_utc.astimezone(task_tz).date()
             occurrences = self._get_upcoming_occurrences(
                 task, search_start, week_end
@@ -108,7 +112,7 @@ class DashboardUsecases:
         self, task: Task, start: datetime, end: datetime
     ) -> list[datetime]:
         try:
-            tz = pytz.timezone(task.timezone)
+            tz = _resolve_task_timezone(task.timezone)
             start_local = start.astimezone(tz)
             cron = croniter(str(task.cron_expression), start_local - timedelta(seconds=1))
             occurrences = []
@@ -133,3 +137,15 @@ class DashboardUsecases:
             ) < window.total_seconds():
                 return e
         return None
+
+
+def _resolve_task_timezone(timezone_name: str | None) -> BaseTzInfo:
+    normalized = (timezone_name or "").strip() or "Asia/Tokyo"
+    try:
+        return pytz.timezone(normalized)
+    except pytz.UnknownTimeZoneError:
+        logger.warning(
+            "Invalid task timezone %r; falling back to Asia/Tokyo",
+            timezone_name,
+        )
+        return pytz.timezone("Asia/Tokyo")
