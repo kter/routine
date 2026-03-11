@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-unit test-integration test-e2e \
+        test test-unit test-integration test-e2e smoke-deploy \
         lint lint-frontend lint-backend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         build build-frontend build-lambda \
@@ -55,13 +55,21 @@ test-integration:
 ## test-e2e: Run E2E tests against dev environment (requires E2E_TEST_USER_EMAIL and E2E_TEST_USER_PASSWORD)
 test-e2e:
 	@echo "Running E2E tests against dev environment..."
-	@export E2E_TEST_USER_EMAIL=$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
-	export E2E_TEST_USER_PASSWORD=$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2) && \
+	@export E2E_TEST_USER_EMAIL="$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	export E2E_TEST_USER_PASSWORD="$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
 	npx playwright test --config=playwright.config.ts
 
-# ──────────────────────────────────────────────────────────────────────
-# Lint
-# ──────────────────────────────────────────────────────────────────────
+## smoke-deploy: Run authenticated dashboard smoke test against the deployed frontend (ENV=dev|prd)
+smoke-deploy:
+	@echo "Running post-deploy smoke test for ENV=$(ENV)..."
+	@terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null && \
+	export PLAYWRIGHT_BASE_URL=$$(terraform -chdir=$(INFRA_DIR) output -raw frontend_url 2>/dev/null) && \
+	export E2E_TEST_USER_EMAIL="$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	export E2E_TEST_USER_PASSWORD="$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
+	test -n "$$PLAYWRIGHT_BASE_URL" && \
+	test -n "$$E2E_TEST_USER_EMAIL" && \
+	test -n "$$E2E_TEST_USER_PASSWORD" && \
+	npx playwright test --config=playwright.config.ts tests/e2e/deploy-smoke.spec.ts --project=chromium
 
 ## lint: Run all linters
 lint: lint-frontend lint-backend
@@ -174,7 +182,8 @@ deploy:
 	$(MAKE) tf-plan ENV=$(ENV); \
 	$(MAKE) tf-apply ENV=$(ENV); \
 	wait $$frontend_pid; \
-	$(MAKE) deploy-frontend ENV=$(ENV)
+	$(MAKE) deploy-frontend ENV=$(ENV); \
+	if [ "$(ENV)" = "dev" ]; then $(MAKE) smoke-deploy ENV=$(ENV); fi
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache
 deploy-frontend:

@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -9,6 +10,8 @@ from routineops.domain.entities.task import Task
 from routineops.domain.value_objects.execution_status import ExecutionStatus
 from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
 from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardItem:
@@ -141,4 +144,8 @@ def _resolve_task_timezone(timezone_name: str | None) -> BaseTzInfo:
     try:
         return pytz.timezone(normalized)
     except pytz.UnknownTimeZoneError:
+        logger.warning(
+            "Invalid task timezone %r; falling back to Asia/Tokyo",
+            timezone_name,
+        )
         return pytz.timezone("Asia/Tokyo")
