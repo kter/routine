@@ -3,8 +3,8 @@ Aurora DSQL engine with IAM token auto-renewal via do_connect event.
 Falls back to SQLite for local/test environments.
 """
 
-import os
 import logging
+import os
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
@@ -31,10 +31,7 @@ def create_dsql_engine(
     db_name: str,
     region: str = "ap-northeast-1",
 ) -> Engine:
-    url = (
-        f"postgresql+psycopg2://admin@{cluster_endpoint}/{db_name}"
-        "?sslmode=require"
-    )
+    url = f"postgresql+psycopg2://admin@{cluster_endpoint}/{db_name}?sslmode=require"
     engine = create_engine(url, pool_pre_ping=True, pool_size=5, max_overflow=10)
 
     @event.listens_for(engine, "do_connect")
@@ -74,8 +71,12 @@ def get_engine() -> Engine:
 
 
 def init_db() -> None:
-    from routineops.infrastructure.db.base import Base
+    if os.getenv("DB_TYPE", "dsql") != "sqlite":
+        logger.info("Skipping create_all for non-SQLite DB; use Alembic migrations instead")
+        return
+
     from routineops.infrastructure.db import models as _models  # noqa: F401
+    from routineops.infrastructure.db.base import Base
 
     engine = get_engine()
     Base.metadata.create_all(engine)

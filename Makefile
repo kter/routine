@@ -144,11 +144,11 @@ build-lambda:
 # Terraform
 # ──────────────────────────────────────────────────────────────────────
 
-## tf-bootstrap: Create remote state S3 bucket + DynamoDB table (run once)
+## tf-bootstrap: Create remote state S3 bucket (run once, ENV selects AWS profile)
 tf-bootstrap:
-	@echo "Bootstrapping Terraform remote state..."
+	@echo "Bootstrapping Terraform remote state for ENV=$(ENV)..."
 	terraform -chdir=$(INFRA_DIR)/bootstrap init
-	terraform -chdir=$(INFRA_DIR)/bootstrap apply -auto-approve
+	terraform -chdir=$(INFRA_DIR)/bootstrap apply -auto-approve -var="aws_profile=$(ENV)"
 
 ## tf-init: Initialize Terraform and select workspace (ENV=dev|prd)
 tf-init:
@@ -213,7 +213,7 @@ deploy-frontend:
 ## db-migrate: Apply DDL schema + indexes (ENV=dev|prd)
 db-migrate:
 	@echo "Running DB migrations for ENV=$(ENV)..."
-	@cd $(BACKEND_DIR) && AWS_PROFILE=$(ENV) ENV=$(ENV) uv run python scripts/db_migrate.py
+	@cd $(BACKEND_DIR) && AWS_PROFILE=$(ENV) ENV=$(ENV) uv run alembic upgrade head
 
 ## db-seed: Insert development seed data (ENV=dev only)
 db-seed:
