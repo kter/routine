@@ -4,25 +4,42 @@ import type { Execution } from "@/features/executions/types";
 
 const STATUS_CONFIG: Record<
   Execution["status"],
-  { label: string; dotColor: string; stripColor: string; labelStyle: React.CSSProperties }
+  {
+    label: string;
+    dotColor: string;
+    stripColor: string;
+    labelStyle: React.CSSProperties;
+  }
 > = {
   in_progress: {
     label: "実行中",
     dotColor: "hsl(43 96% 56%)",
     stripColor: "hsl(43 96% 56%)",
-    labelStyle: { color: "hsl(43 96% 65%)", background: "hsl(43 60% 10%)", border: "1px solid hsl(43 60% 18%)" },
+    labelStyle: {
+      color: "hsl(43 96% 65%)",
+      background: "hsl(43 60% 10%)",
+      border: "1px solid hsl(43 60% 18%)",
+    },
   },
   completed: {
     label: "完了",
     dotColor: "hsl(160 60% 45%)",
     stripColor: "hsl(160 60% 45%)",
-    labelStyle: { color: "hsl(160 60% 55%)", background: "hsl(160 40% 8%)", border: "1px solid hsl(160 40% 15%)" },
+    labelStyle: {
+      color: "hsl(160 60% 55%)",
+      background: "hsl(160 40% 8%)",
+      border: "1px solid hsl(160 40% 15%)",
+    },
   },
   abandoned: {
     label: "中断",
     dotColor: "hsl(215 16% 36%)",
     stripColor: "hsl(218 28% 24%)",
-    labelStyle: { color: "hsl(215 16% 50%)", background: "hsl(218 28% 12%)", border: "1px solid hsl(218 28% 18%)" },
+    labelStyle: {
+      color: "hsl(215 16% 50%)",
+      background: "hsl(218 28% 12%)",
+      border: "1px solid hsl(218 28% 18%)",
+    },
   },
 };
 
@@ -33,15 +50,29 @@ function formatDuration(seconds: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
-function ExecutionRow({ execution, index }: { execution: Execution; index: number }) {
+function ExecutionRow({
+  execution,
+  index,
+}: {
+  execution: Execution;
+  index: number;
+}) {
   const cfg = STATUS_CONFIG[execution.status];
   const startedAt = new Date(execution.startedAt);
   const isActive = execution.status === "in_progress";
 
-  const dateStr = startedAt.toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
-  const timeStr = startedAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = startedAt.toLocaleDateString("ja-JP", {
+    month: "numeric",
+    day: "numeric",
+  });
+  const timeStr = startedAt.toLocaleTimeString("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  const completedSteps = execution.steps.filter((s) => s.status === "completed").length;
+  const completedSteps = execution.steps.filter(
+    (s) => s.status === "completed",
+  ).length;
   const totalSteps = execution.steps.length;
 
   return (
@@ -54,12 +85,16 @@ function ExecutionRow({ execution, index }: { execution: Execution; index: numbe
         animationDelay: `${index * 0.04}s`,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background = "hsl(220 40% 10%)";
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = "hsl(218 28% 22%)";
+        (e.currentTarget as HTMLAnchorElement).style.background =
+          "hsl(220 40% 10%)";
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "hsl(218 28% 22%)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background = "hsl(220 40% 8%)";
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = "hsl(218 28% 15%)";
+        (e.currentTarget as HTMLAnchorElement).style.background =
+          "hsl(220 40% 8%)";
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "hsl(218 28% 15%)";
       }}
     >
       {/* Status color strip — left border */}
@@ -80,7 +115,10 @@ function ExecutionRow({ execution, index }: { execution: Execution; index: numbe
         {/* Main content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-sm font-medium truncate" style={{ color: "hsl(210 20% 86%)" }}>
+            <p
+              className="text-sm font-medium truncate"
+              style={{ color: "hsl(210 20% 86%)" }}
+            >
               {execution.taskTitle ?? execution.taskId}
             </p>
             {/* Status badge */}
@@ -95,20 +133,29 @@ function ExecutionRow({ execution, index }: { execution: Execution; index: numbe
           {/* Metadata row */}
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5">
             {/* Date / time */}
-            <span className="font-mono-data text-[11px]" style={{ color: "hsl(215 16% 38%)" }}>
+            <span
+              className="font-mono-data text-[11px]"
+              style={{ color: "hsl(215 16% 38%)" }}
+            >
               {dateStr} · {timeStr}
             </span>
 
             {/* Step progress */}
             {totalSteps > 0 && (
-              <span className="font-mono-data text-[11px]" style={{ color: "hsl(215 16% 36%)" }}>
+              <span
+                className="font-mono-data text-[11px]"
+                style={{ color: "hsl(215 16% 36%)" }}
+              >
                 {completedSteps}/{totalSteps} steps
               </span>
             )}
 
             {/* Duration */}
             {execution.durationSeconds != null && (
-              <span className="font-mono-data text-[11px]" style={{ color: "hsl(215 16% 34%)" }}>
+              <span
+                className="font-mono-data text-[11px]"
+                style={{ color: "hsl(215 16% 34%)" }}
+              >
                 {formatDuration(execution.durationSeconds)}
               </span>
             )}
@@ -134,11 +181,17 @@ export default function ExecutionListPage() {
     <div className="space-y-4">
       {/* Page heading */}
       <div className="flex items-baseline justify-between">
-        <h1 className="font-brand text-lg font-700 tracking-tight" style={{ fontWeight: 700 }}>
+        <h1
+          className="font-brand text-lg font-700 tracking-tight"
+          style={{ fontWeight: 700 }}
+        >
           実行ログ
         </h1>
         {!isLoading && !error && (
-          <span className="font-mono-data text-[11px]" style={{ color: "hsl(215 16% 34%)" }}>
+          <span
+            className="font-mono-data text-[11px]"
+            style={{ color: "hsl(215 16% 34%)" }}
+          >
             {executions.length} records
           </span>
         )}
@@ -156,8 +209,14 @@ export default function ExecutionListPage() {
           ))}
         </div>
       ) : error ? (
-        <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md" style={{ border: "1px solid hsl(218 28% 14%)" }}>
-          <p className="font-mono-data text-sm" style={{ color: "hsl(0 72% 54%)" }}>
+        <div
+          className="flex h-40 flex-col items-center justify-center gap-3 rounded-md"
+          style={{ border: "1px solid hsl(218 28% 14%)" }}
+        >
+          <p
+            className="font-mono-data text-sm"
+            style={{ color: "hsl(0 72% 54%)" }}
+          >
             ERR: データの取得に失敗しました
           </p>
           <button
@@ -173,7 +232,10 @@ export default function ExecutionListPage() {
           className="flex h-40 flex-col items-center justify-center gap-2 rounded-md"
           style={{ border: "1px dashed hsl(218 28% 18%)" }}
         >
-          <span className="font-mono-data text-[11px] tracking-widest uppercase" style={{ color: "hsl(215 16% 30%)" }}>
+          <span
+            className="font-mono-data text-[11px] tracking-widest uppercase"
+            style={{ color: "hsl(215 16% 30%)" }}
+          >
             No records
           </span>
           <p className="text-sm" style={{ color: "hsl(215 16% 36%)" }}>

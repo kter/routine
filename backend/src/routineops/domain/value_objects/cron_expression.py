@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from croniter import croniter
 
 from routineops.domain.exceptions import ValidationError

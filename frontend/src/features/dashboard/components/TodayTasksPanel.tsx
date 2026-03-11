@@ -9,7 +9,10 @@ interface TodayTasksPanelProps {
   onStartExecution: (taskId: string) => void;
 }
 
-export function TodayTasksPanel({ tasks, onStartExecution }: TodayTasksPanelProps) {
+export function TodayTasksPanel({
+  tasks,
+  onStartExecution,
+}: TodayTasksPanelProps) {
   return (
     <div
       className="rounded-md flex-1 animate-fade-up"
@@ -23,14 +26,18 @@ export function TodayTasksPanel({ tasks, onStartExecution }: TodayTasksPanelProp
         className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: "1px solid hsl(218 28% 14%)" }}
       >
-        <span className="font-brand text-sm font-700 tracking-tight" style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}>
+        <span
+          className="font-brand text-sm font-700 tracking-tight"
+          style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}
+        >
           本日のタスク
         </span>
         <span
           className="font-mono-data text-[10px] rounded px-1.5 py-0.5"
           style={{
             color: tasks.length > 0 ? "hsl(43 96% 60%)" : "hsl(215 16% 44%)",
-            background: tasks.length > 0 ? "hsl(43 60% 10%)" : "hsl(218 28% 14%)",
+            background:
+              tasks.length > 0 ? "hsl(43 60% 10%)" : "hsl(218 28% 14%)",
             border: `1px solid ${tasks.length > 0 ? "hsl(43 60% 18%)" : "hsl(218 28% 20%)"}`,
           }}
         >
@@ -90,10 +97,12 @@ export function TodayTasksPanel({ tasks, onStartExecution }: TodayTasksPanelProp
                       background: "hsl(43 96% 56%)",
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(43 96% 64%)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "hsl(43 96% 64%)";
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLButtonElement).style.background = "hsl(43 96% 56%)";
+                      (e.currentTarget as HTMLButtonElement).style.background =
+                        "hsl(43 96% 56%)";
                     }}
                   >
                     <Play className="h-3 w-3 fill-current" />

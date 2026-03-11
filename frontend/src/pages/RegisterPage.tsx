@@ -34,8 +34,12 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const signUpForm = useForm<SignUpValues>({ resolver: zodResolver(signUpSchema) });
-  const confirmForm = useForm<ConfirmValues>({ resolver: zodResolver(confirmSchema) });
+  const signUpForm = useForm<SignUpValues>({
+    resolver: zodResolver(signUpSchema),
+  });
+  const confirmForm = useForm<ConfirmValues>({
+    resolver: zodResolver(confirmSchema),
+  });
 
   const onSignUp = async (data: SignUpValues) => {
     setError(null);
@@ -67,9 +71,14 @@ export default function RegisterPage() {
         </div>
 
         {step === "signup" && (
-          <form onSubmit={signUpForm.handleSubmit(onSignUp)} className="space-y-4">
+          <form
+            onSubmit={signUpForm.handleSubmit(onSignUp)}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-sm font-medium">メールアドレス</label>
+              <label className="block text-sm font-medium">
+                メールアドレス
+              </label>
               <input
                 type="email"
                 {...signUpForm.register("email")}
@@ -95,7 +104,9 @@ export default function RegisterPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium">パスワード（確認）</label>
+              <label className="block text-sm font-medium">
+                パスワード（確認）
+              </label>
               <input
                 type="password"
                 {...signUpForm.register("confirmPassword")}
@@ -117,7 +128,10 @@ export default function RegisterPage() {
             </button>
             <p className="text-center text-sm text-muted-foreground">
               すでにアカウントをお持ちの方は{" "}
-              <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+              <Link
+                to="/login"
+                className="text-primary underline-offset-4 hover:underline"
+              >
                 ログイン
               </Link>
             </p>
@@ -125,9 +139,13 @@ export default function RegisterPage() {
         )}
 
         {step === "confirm" && (
-          <form onSubmit={confirmForm.handleSubmit(onConfirm)} className="space-y-4">
+          <form
+            onSubmit={confirmForm.handleSubmit(onConfirm)}
+            className="space-y-4"
+          >
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium">{email}</span> に確認コードを送信しました。
+              <span className="font-medium">{email}</span>{" "}
+              に確認コードを送信しました。
             </p>
             <div>
               <label className="block text-sm font-medium">確認コード</label>

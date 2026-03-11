@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class EvidenceType(str, Enum):
+class EvidenceType(StrEnum):
     NONE = "none"
     TEXT = "text"
     IMAGE = "image"

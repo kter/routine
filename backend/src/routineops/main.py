@@ -1,11 +1,11 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
-from routineops.interface.api.v1.router import router as v1_router
 from routineops.infrastructure.db.engine import init_db
-
-import os
+from routineops.interface.api.v1.router import router as v1_router
 
 
 def create_app() -> FastAPI:

@@ -30,7 +30,10 @@ export default function DashboardPage() {
   if (error || !data) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <p className="font-mono-data text-sm" style={{ color: "hsl(0 72% 54%)" }}>
+        <p
+          className="font-mono-data text-sm"
+          style={{ color: "hsl(0 72% 54%)" }}
+        >
           ERR: データの取得に失敗しました
         </p>
         <button
@@ -48,20 +51,37 @@ export default function DashboardPage() {
     <div className="space-y-4">
       {/* Page heading */}
       <div className="flex items-baseline gap-3">
-        <h1 className="font-brand text-lg font-700 tracking-tight" style={{ fontWeight: 700 }}>
+        <h1
+          className="font-brand text-lg font-700 tracking-tight"
+          style={{ fontWeight: 700 }}
+        >
           ダッシュボード
         </h1>
-        <span className="font-mono-data text-[11px]" style={{ color: "hsl(215 16% 36%)" }}>
-          {new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "short" })}
+        <span
+          className="font-mono-data text-[11px]"
+          style={{ color: "hsl(215 16% 36%)" }}
+        >
+          {new Date().toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+          })}
         </span>
       </div>
 
       {/* Overdue alert — full width */}
-      <OverduePanel tasks={data.overdue} onStartExecution={handleStartExecution} />
+      <OverduePanel
+        tasks={data.overdue}
+        onStartExecution={handleStartExecution}
+      />
 
       {/* Two-column grid: today + upcoming */}
       <div className="flex gap-4">
-        <TodayTasksPanel tasks={data.today} onStartExecution={handleStartExecution} />
+        <TodayTasksPanel
+          tasks={data.today}
+          onStartExecution={handleStartExecution}
+        />
         <UpcomingPanel tasks={data.upcoming} />
       </div>
     </div>

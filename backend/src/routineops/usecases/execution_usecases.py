@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from routineops.domain.entities.execution import Execution, ExecutionStep
@@ -35,7 +35,7 @@ class ExecutionUsecases:
         if not task.is_active:
             raise ValidationError(f"Task '{task.title}' is not active")
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         execution = Execution(
             id=uuid4(),
             tenant_id=tenant_id,
@@ -92,9 +92,7 @@ class ExecutionUsecases:
             raise NotFoundError("Execution", str(execution_id))
 
         if execution.status != ExecutionStatus.IN_PROGRESS:
-            raise ValidationError(
-                f"Cannot modify execution in status '{execution.status}'"
-            )
+            raise ValidationError(f"Cannot modify execution in status '{execution.status}'")
 
         step = next((s for s in execution.steps if s.id == step_id), None)
         if step is None:
@@ -109,7 +107,7 @@ class ExecutionUsecases:
         if step.evidence_type.value == "image" and not evidence_image_key:
             raise ValidationError("Evidence image is required for this step")
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         step.status = StepStatus.COMPLETED
         step.evidence_text = evidence_text
         step.evidence_image_key = evidence_image_key
@@ -131,9 +129,7 @@ class ExecutionUsecases:
             raise NotFoundError("Execution", str(execution_id))
 
         if execution.status != ExecutionStatus.IN_PROGRESS:
-            raise ValidationError(
-                f"Cannot modify execution in status '{execution.status}'"
-            )
+            raise ValidationError(f"Cannot modify execution in status '{execution.status}'")
 
         step = next((s for s in execution.steps if s.id == step_id), None)
         if step is None:
@@ -146,7 +142,7 @@ class ExecutionUsecases:
             raise ValidationError("Cannot skip a required step")
 
         step.status = StepStatus.SKIPPED
-        step.updated_at = datetime.now(tz=timezone.utc)
+        step.updated_at = datetime.now(tz=UTC)
         return self._exec_repo.update_step(step)
 
     def complete_execution(
@@ -161,10 +157,10 @@ class ExecutionUsecases:
 
         execution.validate_complete()
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         started_at = execution.started_at
         if started_at.tzinfo is None:
-            started_at = started_at.replace(tzinfo=timezone.utc)
+            started_at = started_at.replace(tzinfo=UTC)
         duration = int((now - started_at).total_seconds())
 
         execution.status = ExecutionStatus.COMPLETED
@@ -187,11 +183,9 @@ class ExecutionUsecases:
             raise NotFoundError("Execution", str(execution_id))
 
         if execution.status != ExecutionStatus.IN_PROGRESS:
-            raise ValidationError(
-                f"Cannot abandon execution in status '{execution.status}'"
-            )
+            raise ValidationError(f"Cannot abandon execution in status '{execution.status}'")
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         execution.status = ExecutionStatus.ABANDONED
         execution.completed_at = now
         if notes:

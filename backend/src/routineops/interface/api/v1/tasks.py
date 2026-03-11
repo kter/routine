@@ -7,9 +7,9 @@ from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.interface.api.deps import TenantDep, get_task_usecases
 from routineops.interface.schemas.task import (
     CreateTaskRequest,
+    StepResponse,
     TaskResponse,
     UpdateTaskRequest,
-    StepResponse,
 )
 from routineops.usecases.task_usecases import TaskUsecases
 
@@ -18,8 +18,6 @@ TaskUsecasesDep = Annotated[TaskUsecases, Depends(get_task_usecases)]
 
 
 def _map_task(task) -> TaskResponse:  # type: ignore[no-untyped-def]
-    from routineops.domain.entities.task import Task
-    from routineops.domain.entities.task import Step
 
     return TaskResponse(
         id=task.id,

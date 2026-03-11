@@ -9,7 +9,10 @@ export default function TasksPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between">
-        <h1 className="font-brand text-lg font-700 tracking-tight" style={{ fontWeight: 700 }}>
+        <h1
+          className="font-brand text-lg font-700 tracking-tight"
+          style={{ fontWeight: 700 }}
+        >
           タスク管理
         </h1>
         <Link
@@ -20,10 +23,12 @@ export default function TasksPage() {
             background: "hsl(43 96% 56%)",
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "hsl(43 96% 64%)";
+            (e.currentTarget as HTMLAnchorElement).style.background =
+              "hsl(43 96% 64%)";
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLAnchorElement).style.background = "hsl(43 96% 56%)";
+            (e.currentTarget as HTMLAnchorElement).style.background =
+              "hsl(43 96% 56%)";
           }}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -34,12 +39,22 @@ export default function TasksPage() {
       {isLoading ? (
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 rounded-md shimmer" style={{ opacity: 1 - i * 0.2 }} />
+            <div
+              key={i}
+              className="h-24 rounded-md shimmer"
+              style={{ opacity: 1 - i * 0.2 }}
+            />
           ))}
         </div>
       ) : error ? (
-        <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md" style={{ border: "1px solid hsl(218 28% 14%)" }}>
-          <p className="font-mono-data text-sm" style={{ color: "hsl(0 72% 54%)" }}>
+        <div
+          className="flex h-40 flex-col items-center justify-center gap-3 rounded-md"
+          style={{ border: "1px solid hsl(218 28% 14%)" }}
+        >
+          <p
+            className="font-mono-data text-sm"
+            style={{ color: "hsl(0 72% 54%)" }}
+          >
             ERR: データの取得に失敗しました
           </p>
           <button
@@ -51,7 +66,10 @@ export default function TasksPage() {
           </button>
         </div>
       ) : (
-        <TaskList tasks={tasks} emptyMessage="タスクが登録されていません。新規作成してください。" />
+        <TaskList
+          tasks={tasks}
+          emptyMessage="タスクが登録されていません。新規作成してください。"
+        />
       )}
     </div>
   );

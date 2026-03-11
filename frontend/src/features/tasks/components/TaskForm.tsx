@@ -48,7 +48,12 @@ export function TaskForm({
     await onSubmit({
       ...data,
       cronExpression,
-      tags: data.tags ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      tags: data.tags
+        ? data.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [],
       steps,
     });
   };
@@ -99,7 +104,9 @@ export function TaskForm({
       </div>
 
       <div className="space-y-1">
-        <label className="block text-sm font-medium">タグ（カンマ区切り）</label>
+        <label className="block text-sm font-medium">
+          タグ（カンマ区切り）
+        </label>
         <input
           {...register("tags")}
           placeholder="例: 月次, 請求, AWS"

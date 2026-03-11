@@ -31,9 +31,7 @@ def verify_token(token: str) -> dict[str, object]:
         kid = headers["kid"]
 
         jwks = _get_jwks()
-        key_data = next(
-            (k for k in jwks["keys"] if k["kid"] == kid), None
-        )
+        key_data = next((k for k in jwks["keys"] if k["kid"] == kid), None)
         if key_data is None:
             raise ValueError("Public key not found for kid")
 
@@ -48,7 +46,10 @@ def verify_token(token: str) -> dict[str, object]:
 
         # Verify audience and issuer
         expected_client_id = os.environ["COGNITO_CLIENT_ID"]
-        if claims.get("client_id") != expected_client_id and claims.get("aud") != expected_client_id:
+        if (
+            claims.get("client_id") != expected_client_id
+            and claims.get("aud") != expected_client_id
+        ):
             raise ValueError("Token audience mismatch")
 
         return claims

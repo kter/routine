@@ -10,8 +10,7 @@ The tests never touch a real DB or AWS service.
 import json
 import os
 import uuid
-from contextlib import contextmanager
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -21,10 +20,10 @@ os.environ.setdefault("AWS_REGION", "ap-northeast-1")
 
 from routineops.infrastructure.auth.post_confirmation_trigger import handler  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_event(
     trigger_source: str = "PostConfirmation_ConfirmSignUp",
@@ -72,8 +71,16 @@ def _patched_handler(event: dict, mock_conn: MagicMock, mock_cognito: MagicMock)
             return mock_cognito
         raise ValueError(f"Unexpected boto3 service: {service_name}")
 
-    with patch("routineops.infrastructure.auth.post_confirmation_trigger.boto3.client", side_effect=fake_boto3_client), \
-         patch("routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect", return_value=mock_conn):
+    with (
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.boto3.client",
+            side_effect=fake_boto3_client,
+        ),
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect",
+            return_value=mock_conn,
+        ),
+    ):
         return handler(event, context=None)
 
 
@@ -81,21 +88,31 @@ def _patched_handler(event: dict, mock_conn: MagicMock, mock_cognito: MagicMock)
 # Test: trigger source filtering
 # ---------------------------------------------------------------------------
 
+
 class TestTriggerSourceFiltering:
     """Handler must be a no-op for any trigger other than PostConfirmation_ConfirmSignUp."""
 
-    @pytest.mark.parametrize("trigger_source", [
-        "PostConfirmation_ConfirmForgotPassword",
-        "PreSignUp_SignUp",
-        "PostAuthentication_Authentication",
-        "",
-        "unknown",
-    ])
+    @pytest.mark.parametrize(
+        "trigger_source",
+        [
+            "PostConfirmation_ConfirmForgotPassword",
+            "PreSignUp_SignUp",
+            "PostAuthentication_Authentication",
+            "",
+            "unknown",
+        ],
+    )
     def test_returns_event_unchanged_for_other_triggers(self, trigger_source: str) -> None:
         event = _make_event(trigger_source=trigger_source)
 
-        with patch("routineops.infrastructure.auth.post_confirmation_trigger.boto3.client") as mock_boto3, \
-             patch("routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect") as mock_psycopg2:
+        with (
+            patch(
+                "routineops.infrastructure.auth.post_confirmation_trigger.boto3.client"
+            ) as mock_boto3,
+            patch(
+                "routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect"
+            ) as mock_psycopg2,
+        ):
             result = handler(event, context=None)
 
         assert result is event
@@ -106,6 +123,7 @@ class TestTriggerSourceFiltering:
 # ---------------------------------------------------------------------------
 # Test: happy path
 # ---------------------------------------------------------------------------
+
 
 class TestHappyPath:
     def test_returns_original_event(self) -> None:
@@ -180,12 +198,16 @@ class TestHappyPath:
 # Test: email prefix extraction as tenant name
 # ---------------------------------------------------------------------------
 
+
 class TestNameExtraction:
-    @pytest.mark.parametrize("email, expected_name", [
-        ("alice@example.com", "alice"),
-        ("bob.smith+tag@company.co.jp", "bob.smith+tag"),
-        ("admin@sub.domain.example.com", "admin"),
-    ])
+    @pytest.mark.parametrize(
+        "email, expected_name",
+        [
+            ("alice@example.com", "alice"),
+            ("bob.smith+tag@company.co.jp", "bob.smith+tag"),
+            ("admin@sub.domain.example.com", "admin"),
+        ],
+    )
     def test_extracts_email_prefix_as_name(self, email: str, expected_name: str) -> None:
         event = _make_event(email=email)
         mock_conn = _make_mock_conn()
@@ -216,6 +238,7 @@ class TestNameExtraction:
 # Test: error handling
 # ---------------------------------------------------------------------------
 
+
 class TestErrorHandling:
     def test_db_failure_closes_connection_and_propagates(self) -> None:
         """If DB INSERT fails, the connection is still closed and exception propagates."""
@@ -224,7 +247,7 @@ class TestErrorHandling:
         mock_cursor = MagicMock()
         mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
         mock_cursor.__exit__ = MagicMock(return_value=False)
-        mock_cursor.execute.side_effect = Exception("DB connection refused")
+        mock_cursor.execute.side_effect = RuntimeError("DB connection refused")
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
@@ -232,7 +255,7 @@ class TestErrorHandling:
         mock_conn.cursor.return_value = mock_cursor
         mock_cognito = MagicMock()
 
-        with pytest.raises(Exception, match="DB connection refused"):
+        with pytest.raises(RuntimeError, match="DB connection refused"):
             _patched_handler(event, mock_conn, mock_cognito)
 
         mock_conn.close.assert_called_once()
@@ -242,9 +265,9 @@ class TestErrorHandling:
         event = _make_event()
         mock_conn = _make_mock_conn()
         mock_cognito = MagicMock()
-        mock_cognito.admin_update_user_attributes.side_effect = Exception("Cognito error")
+        mock_cognito.admin_update_user_attributes.side_effect = RuntimeError("Cognito error")
 
-        with pytest.raises(Exception, match="Cognito error"):
+        with pytest.raises(RuntimeError, match="Cognito error"):
             _patched_handler(event, mock_conn, mock_cognito)
 
     def test_cognito_not_called_if_db_fails(self) -> None:
@@ -254,7 +277,7 @@ class TestErrorHandling:
         mock_cursor = MagicMock()
         mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
         mock_cursor.__exit__ = MagicMock(return_value=False)
-        mock_cursor.execute.side_effect = Exception("DB error")
+        mock_cursor.execute.side_effect = RuntimeError("DB error")
 
         mock_conn = MagicMock()
         mock_conn.__enter__ = MagicMock(return_value=mock_conn)
@@ -262,7 +285,7 @@ class TestErrorHandling:
         mock_conn.cursor.return_value = mock_cursor
         mock_cognito = MagicMock()
 
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError, match="DB error"):
             _patched_handler(event, mock_conn, mock_cognito)
 
         mock_cognito.admin_update_user_attributes.assert_not_called()
@@ -285,6 +308,7 @@ class TestErrorHandling:
 # Test: IAM token is used as DB password
 # ---------------------------------------------------------------------------
 
+
 class TestIamTokenAuthentication:
     def test_connect_uses_iam_token_as_password(self) -> None:
         event = _make_event()
@@ -299,8 +323,16 @@ class TestIamTokenAuthentication:
                 return mock_dsql
             return mock_cognito
 
-        with patch("routineops.infrastructure.auth.post_confirmation_trigger.boto3.client", side_effect=fake_boto3_client), \
-             patch("routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect", return_value=mock_conn) as mock_connect:
+        with (
+            patch(
+                "routineops.infrastructure.auth.post_confirmation_trigger.boto3.client",
+                side_effect=fake_boto3_client,
+            ),
+            patch(
+                "routineops.infrastructure.auth.post_confirmation_trigger.psycopg2.connect",
+                return_value=mock_conn,
+            ) as mock_connect,
+        ):
             handler(event, context=None)
 
         call_kwargs = mock_connect.call_args.kwargs

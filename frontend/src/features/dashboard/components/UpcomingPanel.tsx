@@ -21,7 +21,10 @@ export function UpcomingPanel({ tasks }: UpcomingPanelProps) {
         className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: "1px solid hsl(218 28% 14%)" }}
       >
-        <span className="font-brand text-sm font-700 tracking-tight" style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}>
+        <span
+          className="font-brand text-sm font-700 tracking-tight"
+          style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}
+        >
           今後7日間
         </span>
         <span

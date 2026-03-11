@@ -185,9 +185,7 @@ class TestCreateTask:
 
 
 class TestDeleteTask:
-    def test_deletes_existing_task(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
-    ) -> None:
+    def test_deletes_existing_task(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
         task = make_task()
         mock_repo.get.return_value = task
 

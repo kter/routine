@@ -10,7 +10,11 @@ export const executionsApi = {
   get: (id: string) => apiClient.get<Execution>(`/api/v1/executions/${id}`),
   start: (data: StartExecutionRequest) =>
     apiClient.post<Execution>("/api/v1/executions", data),
-  completeStep: (executionId: string, stepId: string, data: CompleteStepRequest) =>
+  completeStep: (
+    executionId: string,
+    stepId: string,
+    data: CompleteStepRequest,
+  ) =>
     apiClient.patch<void>(
       `/api/v1/executions/${executionId}/steps/${stepId}/complete`,
       data,
@@ -29,7 +33,10 @@ export const executionsApi = {
     stepId: string,
     contentType: string,
   ): Promise<{ uploadUrl: string; key: string }> =>
-    apiClient.post(`/api/v1/executions/${executionId}/steps/${stepId}/evidence-url`, {
-      contentType,
-    }),
+    apiClient.post(
+      `/api/v1/executions/${executionId}/steps/${stepId}/evidence-url`,
+      {
+        contentType,
+      },
+    ),
 };

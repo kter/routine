@@ -1,4 +1,5 @@
 import os
+
 import boto3
 
 from routineops.usecases.interfaces.storage_port import StoragePort
@@ -9,9 +10,7 @@ class S3StorageImpl(StoragePort):
         self._bucket = bucket_name or os.environ["EVIDENCE_BUCKET_NAME"]
         self._client = boto3.client("s3")
 
-    def generate_upload_url(
-        self, key: str, content_type: str, expires_in: int = 3600
-    ) -> str:
+    def generate_upload_url(self, key: str, content_type: str, expires_in: int = 3600) -> str:
         url: str = self._client.generate_presigned_url(
             "put_object",
             Params={

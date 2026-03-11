@@ -20,8 +20,14 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
     ]);
   };
 
-  const updateStep = (index: number, field: keyof CreateStepRequest, value: unknown) => {
-    const updated = steps.map((s, i) => (i === index ? { ...s, [field]: value } : s));
+  const updateStep = (
+    index: number,
+    field: keyof CreateStepRequest,
+    value: unknown,
+  ) => {
+    const updated = steps.map((s, i) =>
+      i === index ? { ...s, [field]: value } : s,
+    );
     onChange(updated);
   };
 
@@ -62,7 +68,9 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
                 <span className="text-muted-foreground">証跡タイプ:</span>
                 <select
                   value={step.evidenceType}
-                  onChange={(e) => updateStep(index, "evidenceType", e.target.value)}
+                  onChange={(e) =>
+                    updateStep(index, "evidenceType", e.target.value)
+                  }
                   className="rounded border bg-background px-1 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="none">なし</option>
@@ -74,7 +82,9 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
                 <input
                   type="checkbox"
                   checked={step.isRequired}
-                  onChange={(e) => updateStep(index, "isRequired", e.target.checked)}
+                  onChange={(e) =>
+                    updateStep(index, "isRequired", e.target.checked)
+                  }
                   className="h-3 w-3"
                 />
                 <span>必須</span>

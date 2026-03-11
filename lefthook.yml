@@ -1,0 +1,17 @@
+pre-commit:
+  commands:
+    backend-lint:
+      run: make lint-backend-fast
+    backend-format:
+      run: make format-check-backend
+    frontend-lint:
+      run: make lint-frontend
+    frontend-format:
+      run: make format-check-frontend
+
+pre-push:
+  commands:
+    backend-tests:
+      run: make test
+    e2e-tests:
+      run: make test-e2e

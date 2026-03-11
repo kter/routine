@@ -1,6 +1,5 @@
 """Integration test fixtures: TestClient + SQLite in-memory DB."""
 
-import os
 from collections.abc import Generator
 from unittest.mock import MagicMock
 from uuid import UUID
@@ -11,9 +10,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from routineops.infrastructure.db import (
+    models as _models,  # noqa: F401 - triggers SQLAlchemy model registration
+)
 from routineops.infrastructure.db.base import Base
 from routineops.infrastructure.db.session import get_db
-from routineops.infrastructure.db import models as _models  # noqa: F401 - triggers SQLAlchemy model registration
 from routineops.infrastructure.storage.s3_storage import S3StorageImpl
 from routineops.interface.api.deps import get_current_tenant, get_storage
 from routineops.main import app

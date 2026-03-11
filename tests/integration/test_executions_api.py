@@ -1,4 +1,5 @@
 """Integration tests for Executions API - wizard flow E2E."""
+
 from fastapi.testclient import TestClient
 
 
@@ -142,9 +143,7 @@ class TestSkipStep:
 
 
 class TestCompleteExecution:
-    def _complete_all_required_steps(
-        self, client: TestClient, execution: dict
-    ) -> None:
+    def _complete_all_required_steps(self, client: TestClient, execution: dict) -> None:
         for step in execution["steps"]:
             if step["step_snapshot"].get("is_required"):
                 evidence_type = step["step_snapshot"].get("evidence_type", "none")
@@ -156,9 +155,7 @@ class TestCompleteExecution:
                     json=body,
                 )
 
-    def test_completes_execution_after_all_required_steps(
-        self, client: TestClient
-    ) -> None:
+    def test_completes_execution_after_all_required_steps(self, client: TestClient) -> None:
         task = create_task_with_steps(client)
         execution = client.post("/api/v1/executions", json={"task_id": task["id"]}).json()
         self._complete_all_required_steps(client, execution)
@@ -170,9 +167,7 @@ class TestCompleteExecution:
         assert resp.status_code == 200
         assert resp.json()["status"] == "completed"
 
-    def test_cannot_complete_with_pending_required_step(
-        self, client: TestClient
-    ) -> None:
+    def test_cannot_complete_with_pending_required_step(self, client: TestClient) -> None:
         task = create_task_with_steps(client)
         execution = client.post("/api/v1/executions", json={"task_id": task["id"]}).json()
 

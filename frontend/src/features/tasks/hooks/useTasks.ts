@@ -37,10 +37,18 @@ export function useTask(id: string) {
     setIsLoading(true);
     tasksApi
       .get(id)
-      .then((data) => { if (!cancelled) setTask(data); })
-      .catch((err) => { if (!cancelled) setError(err); })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
-    return () => { cancelled = true; };
+      .then((data) => {
+        if (!cancelled) setTask(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   return { task, isLoading, error };

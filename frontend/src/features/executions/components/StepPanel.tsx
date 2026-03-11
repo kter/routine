@@ -11,7 +11,9 @@ interface StepPanelProps {
 
 export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
   const [evidenceText, setEvidenceText] = useState("");
-  const [evidenceImageKey, setEvidenceImageKey] = useState<string | undefined>();
+  const [evidenceImageKey, setEvidenceImageKey] = useState<
+    string | undefined
+  >();
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,7 +24,8 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
     try {
       await onComplete({
         evidenceText: evidenceType === "text" ? evidenceText : undefined,
-        evidenceImageKey: evidenceType === "image" ? evidenceImageKey : undefined,
+        evidenceImageKey:
+          evidenceType === "image" ? evidenceImageKey : undefined,
         notes,
       });
     } finally {
@@ -47,14 +50,24 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
   return (
     <div
       className="space-y-5 rounded-md p-5 animate-fade-up"
-      style={{ background: "hsl(220 40% 8%)", border: "1px solid hsl(218 28% 16%)", borderLeft: "3px solid hsl(43 96% 56%)" }}
+      style={{
+        background: "hsl(220 40% 8%)",
+        border: "1px solid hsl(218 28% 16%)",
+        borderLeft: "3px solid hsl(43 96% 56%)",
+      }}
     >
       <div>
-        <h3 className="font-brand text-base font-700 tracking-tight" style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}>
+        <h3
+          className="font-brand text-base font-700 tracking-tight"
+          style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}
+        >
           {title}
         </h3>
         {instruction && (
-          <div className="mt-3 text-sm leading-relaxed" style={{ color: "hsl(215 16% 55%)" }}>
+          <div
+            className="mt-3 text-sm leading-relaxed"
+            style={{ color: "hsl(215 16% 55%)" }}
+          >
             <MarkdownRenderer content={instruction} />
           </div>
         )}
@@ -62,7 +75,10 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
 
       {evidenceType === "text" && step.status === "pending" && (
         <div className="space-y-1.5">
-          <label className="block font-mono-data text-[11px] uppercase tracking-widest" style={{ color: "hsl(215 16% 44%)" }}>
+          <label
+            className="block font-mono-data text-[11px] uppercase tracking-widest"
+            style={{ color: "hsl(215 16% 44%)" }}
+          >
             証跡テキスト *
           </label>
           <textarea
@@ -71,7 +87,12 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
             rows={4}
             placeholder="実施内容や確認結果を入力してください"
             className="w-full px-3 py-2 text-sm resize-none focus:ring-1"
-            style={{ ...inputStyle, "--tw-ring-color": "hsl(43 96% 56%)" } as React.CSSProperties}
+            style={
+              {
+                ...inputStyle,
+                "--tw-ring-color": "hsl(43 96% 56%)",
+              } as React.CSSProperties
+            }
           />
         </div>
       )}
@@ -85,7 +106,10 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
       )}
 
       <div className="space-y-1.5">
-        <label className="block font-mono-data text-[11px] uppercase tracking-widest" style={{ color: "hsl(215 16% 38%)" }}>
+        <label
+          className="block font-mono-data text-[11px] uppercase tracking-widest"
+          style={{ color: "hsl(215 16% 38%)" }}
+        >
           メモ（任意）
         </label>
         <textarea
@@ -106,7 +130,10 @@ export function StepPanel({ step, onComplete, onSkip }: StepPanelProps) {
             className="rounded px-5 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-40"
             style={{
               color: "hsl(222 47% 5%)",
-              background: canComplete && !isSubmitting ? "hsl(43 96% 56%)" : "hsl(43 60% 30%)",
+              background:
+                canComplete && !isSubmitting
+                  ? "hsl(43 96% 56%)"
+                  : "hsl(43 60% 30%)",
             }}
           >
             {isSubmitting ? "処理中..." : "完了"}

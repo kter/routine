@@ -28,7 +28,10 @@ export default function ExecutionPage() {
   if (error || !execution) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="font-mono-data text-sm" style={{ color: "hsl(0 72% 54%)" }}>
+        <p
+          className="font-mono-data text-sm"
+          style={{ color: "hsl(0 72% 54%)" }}
+        >
           ERR: 実行データが見つかりません
         </p>
       </div>
@@ -42,12 +45,21 @@ export default function ExecutionPage() {
           to="/"
           className="flex items-center justify-center rounded p-1 transition-colors duration-150"
           style={{ color: "hsl(215 16% 40%)" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "hsl(210 20% 75%)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "hsl(215 16% 40%)"; }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.color =
+              "hsl(210 20% 75%)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.color =
+              "hsl(215 16% 40%)";
+          }}
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="font-brand text-lg font-700 tracking-tight" style={{ fontWeight: 700 }}>
+        <h1
+          className="font-brand text-lg font-700 tracking-tight"
+          style={{ fontWeight: 700 }}
+        >
           {execution.taskTitle ?? "タスク実行"}
         </h1>
       </div>
