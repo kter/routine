@@ -17,10 +17,10 @@ terraform {
   #   dev: env:/dev/routineops/terraform.tfstate
   #   prd: env:/prd/routineops/terraform.tfstate
   backend "s3" {
-    bucket         = "routineops-tfstate"
-    key            = "routineops/terraform.tfstate"
-    region         = "ap-northeast-1"
-    dynamodb_table = "routineops-tfstate-lock"
-    encrypt        = true
+    bucket       = "routineops-tfstate"
+    key          = "routineops/terraform.tfstate"
+    region       = "ap-northeast-1"
+    use_lockfile = true
+    encrypt      = true
   }
 }

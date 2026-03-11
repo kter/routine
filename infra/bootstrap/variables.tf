@@ -15,9 +15,3 @@ variable "state_bucket_name" {
   type        = string
   default     = "routineops-tfstate"
 }
-
-variable "lock_table_name" {
-  description = "DynamoDB table name for Terraform state locking"
-  type        = string
-  default     = "routineops-tfstate-lock"
-}
