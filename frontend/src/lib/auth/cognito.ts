@@ -26,7 +26,10 @@ export async function signUp(email: string, password: string): Promise<void> {
   await amplifySignUp({ username: email, password });
 }
 
-export async function confirmSignUp(email: string, code: string): Promise<void> {
+export async function confirmSignUp(
+  email: string,
+  code: string,
+): Promise<void> {
   await amplifyConfirmSignUp({ username: email, confirmationCode: code });
 }
 

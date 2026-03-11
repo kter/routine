@@ -6,9 +6,14 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
-export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+export function MarkdownRenderer({
+  content,
+  className,
+}: MarkdownRendererProps) {
   return (
-    <div className={cn("prose prose-sm max-w-none dark:prose-invert", className)}>
+    <div
+      className={cn("prose prose-sm max-w-none dark:prose-invert", className)}
+    >
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );

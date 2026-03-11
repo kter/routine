@@ -12,10 +12,16 @@ export function Sidebar() {
   return (
     <aside
       className="flex w-56 flex-col"
-      style={{ background: "hsl(222 50% 4%)", borderRight: "1px solid hsl(218 28% 12%)" }}
+      style={{
+        background: "hsl(222 50% 4%)",
+        borderRight: "1px solid hsl(218 28% 12%)",
+      }}
     >
       {/* Brand mark */}
-      <div className="flex h-14 items-center gap-3 px-4" style={{ borderBottom: "1px solid hsl(218 28% 12%)" }}>
+      <div
+        className="flex h-14 items-center gap-3 px-4"
+        style={{ borderBottom: "1px solid hsl(218 28% 12%)" }}
+      >
         {/* Amber geometric mark */}
         <div
           className="flex h-7 w-7 shrink-0 items-center justify-center"
@@ -31,14 +37,20 @@ export function Sidebar() {
             R
           </span>
         </div>
-        <span className="font-brand text-sm font-700 tracking-tight" style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}>
+        <span
+          className="font-brand text-sm font-700 tracking-tight"
+          style={{ color: "hsl(210 20% 88%)", fontWeight: 700 }}
+        >
           RoutineOps
         </span>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-0.5">
-        <p className="px-3 mb-2 mt-1 font-mono-data text-[10px] tracking-[0.15em] uppercase" style={{ color: "hsl(215 16% 35%)" }}>
+        <p
+          className="px-3 mb-2 mt-1 font-mono-data text-[10px] tracking-[0.15em] uppercase"
+          style={{ color: "hsl(215 16% 35%)" }}
+        >
           Navigation
         </p>
         {navItems.map(({ to, icon: Icon, label, end }) => (
@@ -68,9 +80,15 @@ export function Sidebar() {
                 <span
                   className={cn(
                     "absolute inset-0 rounded-md transition-opacity duration-150",
-                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                    isActive
+                      ? "opacity-100"
+                      : "opacity-0 group-hover:opacity-100",
                   )}
-                  style={{ background: isActive ? "hsl(218 30% 14%)" : "hsl(218 30% 12%)" }}
+                  style={{
+                    background: isActive
+                      ? "hsl(218 30% 14%)"
+                      : "hsl(218 30% 12%)",
+                  }}
                 />
                 <Icon className="relative h-4 w-4 shrink-0" />
                 <span className="relative">{label}</span>
@@ -90,7 +108,10 @@ export function Sidebar() {
             className="animate-pulse-dot h-1.5 w-1.5 rounded-full"
             style={{ background: "hsl(160 60% 45%)" }}
           />
-          <span className="font-mono-data text-[10px]" style={{ color: "hsl(215 16% 38%)" }}>
+          <span
+            className="font-mono-data text-[10px]"
+            style={{ color: "hsl(215 16% 38%)" }}
+          >
             SYSTEM ONLINE
           </span>
         </div>

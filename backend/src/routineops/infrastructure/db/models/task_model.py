@@ -1,9 +1,13 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Boolean, Integer, Text, JSON, Uuid
+from sqlalchemy import JSON, Boolean, Integer, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from routineops.infrastructure.db.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from routineops.infrastructure.db.models.step_model import StepModel
 
 
 class TaskModel(Base, TimestampMixin):
@@ -27,7 +31,3 @@ class TaskModel(Base, TimestampMixin):
         order_by="StepModel.position",
         cascade="all, delete-orphan",
     )
-
-
-# Avoid circular import by importing here
-from routineops.infrastructure.db.models.step_model import StepModel  # noqa: E402, F401

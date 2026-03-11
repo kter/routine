@@ -29,9 +29,19 @@ export default function LoginPage() {
         aria-hidden="true"
       >
         {/* top-left corner bracket */}
-        <path d="M0 80 L0 0 L80 0" fill="none" stroke="hsl(43 96% 56%)" strokeWidth="1" />
+        <path
+          d="M0 80 L0 0 L80 0"
+          fill="none"
+          stroke="hsl(43 96% 56%)"
+          strokeWidth="1"
+        />
         {/* bottom-right corner bracket */}
-        <path d="M100% -80px L100% 100% L calc(100% - 80px) 100%" fill="none" stroke="hsl(43 96% 56%)" strokeWidth="1" />
+        <path
+          d="M100% -80px L100% 100% L calc(100% - 80px) 100%"
+          fill="none"
+          stroke="hsl(43 96% 56%)"
+          strokeWidth="1"
+        />
       </svg>
 
       {/* Login card */}
@@ -42,7 +52,10 @@ export default function LoginPage() {
         {/* Top accent line */}
         <div
           className="absolute -top-px left-8 right-8 h-px"
-          style={{ background: "linear-gradient(90deg, transparent, hsl(43 96% 56%), transparent)" }}
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, hsl(43 96% 56%), transparent)",
+          }}
         />
 
         <div
@@ -69,23 +82,35 @@ export default function LoginPage() {
               </span>
             </div>
             <div className="text-center">
-              <h1 className="font-brand text-xl tracking-tight" style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}>
+              <h1
+                className="font-brand text-xl tracking-tight"
+                style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}
+              >
                 RoutineOps
               </h1>
-              <p className="mt-0.5 font-mono-data text-[11px] tracking-widest uppercase" style={{ color: "hsl(215 16% 38%)" }}>
+              <p
+                className="mt-0.5 font-mono-data text-[11px] tracking-widest uppercase"
+                style={{ color: "hsl(215 16% 38%)" }}
+              >
                 定期作業トラッカー
               </p>
             </div>
           </div>
 
           {/* Divider */}
-          <div className="mb-6 h-px" style={{ background: "hsl(218 28% 16%)" }} />
+          <div
+            className="mb-6 h-px"
+            style={{ background: "hsl(218 28% 16%)" }}
+          />
 
           <LoginForm />
         </div>
 
         {/* Bottom label */}
-        <p className="mt-4 text-center font-mono-data text-[10px] tracking-widest uppercase" style={{ color: "hsl(215 16% 26%)" }}>
+        <p
+          className="mt-4 text-center font-mono-data text-[10px] tracking-widest uppercase"
+          style={{ color: "hsl(215 16% 26%)" }}
+        >
           Secure · AWS Cognito
         </p>
       </div>

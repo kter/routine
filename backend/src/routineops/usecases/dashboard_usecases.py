@@ -73,9 +73,7 @@ class DashboardUsecases:
         for task in tasks:
             task_tz = _resolve_task_timezone(task.timezone)
             today_local = now_utc.astimezone(task_tz).date()
-            occurrences = self._get_upcoming_occurrences(
-                task, search_start, week_end
-            )
+            occurrences = self._get_upcoming_occurrences(task, search_start, week_end)
             task_execs = exec_by_task.get(task.id, [])
 
             for occ in occurrences:
@@ -132,9 +130,10 @@ class DashboardUsecases:
         # Find execution within 1 hour window of the scheduled time
         window = timedelta(hours=1)
         for e in executions:
-            if e.scheduled_for and abs(
-                (e.scheduled_for - scheduled_for).total_seconds()
-            ) < window.total_seconds():
+            if (
+                e.scheduled_for
+                and abs((e.scheduled_for - scheduled_for).total_seconds()) < window.total_seconds()
+            ):
                 return e
         return None
 

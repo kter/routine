@@ -15,8 +15,12 @@ const PRESETS = [
 ];
 
 export function CronPicker({ value, onChange }: CronPickerProps) {
-  const isPreset = PRESETS.some((p) => p.value === value && p.value !== "custom");
-  const [mode, setMode] = useState<"preset" | "custom">(isPreset ? "preset" : "custom");
+  const isPreset = PRESETS.some(
+    (p) => p.value === value && p.value !== "custom",
+  );
+  const [mode, setMode] = useState<"preset" | "custom">(
+    isPreset ? "preset" : "custom",
+  );
 
   const handlePresetChange = (preset: string) => {
     if (preset === "custom") {

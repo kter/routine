@@ -59,14 +59,9 @@ class Execution:
 
     def validate_complete(self) -> None:
         if self.status != ExecutionStatus.IN_PROGRESS:
-            raise ValidationError(
-                f"Cannot complete execution in status '{self.status}'"
-            )
+            raise ValidationError(f"Cannot complete execution in status '{self.status}'")
         if not self.can_complete():
             pending_required = [
-                s for s in self.steps
-                if s.is_required and s.status == StepStatus.PENDING
+                s for s in self.steps if s.is_required and s.status == StepStatus.PENDING
             ]
-            raise ValidationError(
-                f"{len(pending_required)} required step(s) are not completed"
-            )
+            raise ValidationError(f"{len(pending_required)} required step(s) are not completed")

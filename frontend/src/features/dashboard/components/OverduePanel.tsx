@@ -47,7 +47,10 @@ export function OverduePanel({ tasks, onStartExecution }: OverduePanelProps) {
             {tasks.length}
           </span>
         </div>
-        <span className="font-mono-data text-[10px]" style={{ color: "hsl(0 40% 40%)" }}>
+        <span
+          className="font-mono-data text-[10px]"
+          style={{ color: "hsl(0 40% 40%)" }}
+        >
           OVERDUE
         </span>
       </div>
@@ -70,7 +73,10 @@ export function OverduePanel({ tasks, onStartExecution }: OverduePanelProps) {
               >
                 {task.title}
               </Link>
-              <p className="mt-0.5 font-mono-data text-[11px]" style={{ color: "hsl(0 50% 48%)" }}>
+              <p
+                className="mt-0.5 font-mono-data text-[11px]"
+                style={{ color: "hsl(0 50% 48%)" }}
+              >
                 {formatDate(task.scheduledFor)}
               </p>
             </div>

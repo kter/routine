@@ -14,13 +14,17 @@ export function useDashboard() {
       const result = await dashboardApi.get();
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Failed to fetch dashboard"));
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch dashboard"),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => {
+    fetch();
+  }, []);
 
   return { data, isLoading, error, refetch: fetch };
 }

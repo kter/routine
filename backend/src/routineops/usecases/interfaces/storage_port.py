@@ -3,9 +3,7 @@ from abc import ABC, abstractmethod
 
 class StoragePort(ABC):
     @abstractmethod
-    def generate_upload_url(
-        self, key: str, content_type: str, expires_in: int = 3600
-    ) -> str:
+    def generate_upload_url(self, key: str, content_type: str, expires_in: int = 3600) -> str:
         """Generate a pre-signed URL for uploading an object."""
         ...
 

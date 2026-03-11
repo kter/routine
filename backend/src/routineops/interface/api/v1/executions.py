@@ -184,9 +184,7 @@ def abandon_execution(
 ) -> ExecutionResponse:
     tenant_id, _ = tenant
     try:
-        return _map_execution(
-            usecases.abandon_execution(tenant_id, execution_id, notes=body.notes)
-        )
+        return _map_execution(usecases.abandon_execution(tenant_id, execution_id, notes=body.notes))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ValidationError as e:

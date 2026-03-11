@@ -50,24 +50,28 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: "Noto Sans JP", sans-serif;
     font-feature-settings: "palt";
   }
 
   /* Dot-grid background texture */
   .bg-dot-grid {
-    background-image: radial-gradient(circle, hsl(218 28% 20% / 0.6) 1px, transparent 1px);
+    background-image: radial-gradient(
+      circle,
+      hsl(218 28% 20% / 0.6) 1px,
+      transparent 1px
+    );
     background-size: 20px 20px;
   }
 
   /* Brand + heading font */
   .font-brand {
-    font-family: 'Syne', sans-serif;
+    font-family: "Syne", sans-serif;
   }
 
   /* Technical data — IDs, timestamps, counts */
   .font-mono-data {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: "JetBrains Mono", monospace;
     font-variant-numeric: tabular-nums;
   }
 }
@@ -75,23 +79,46 @@
 /* ── Animations ─────────────────────────────── */
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.45; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-8px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-pulse-dot {
@@ -119,7 +146,15 @@
 }
 
 /* Status left-border strip utility */
-.border-status-active    { border-left-color: hsl(var(--primary)); }
-.border-status-completed { border-left-color: hsl(var(--status-success)); }
-.border-status-abandoned { border-left-color: hsl(var(--muted-foreground)); }
-.border-status-overdue   { border-left-color: hsl(var(--destructive)); }
+.border-status-active {
+  border-left-color: hsl(var(--primary));
+}
+.border-status-completed {
+  border-left-color: hsl(var(--status-success));
+}
+.border-status-abandoned {
+  border-left-color: hsl(var(--muted-foreground));
+}
+.border-status-overdue {
+  border-left-color: hsl(var(--destructive));
+}

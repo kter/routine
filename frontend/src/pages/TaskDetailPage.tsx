@@ -26,8 +26,12 @@ export default function TaskDetailPage() {
     navigate(`/executions/${execution.id}`);
   };
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">読み込み中...</div>;
-  if (error || !task) return <div className="text-sm text-destructive">タスクが見つかりません</div>;
+  if (isLoading)
+    return <div className="text-sm text-muted-foreground">読み込み中...</div>;
+  if (error || !task)
+    return (
+      <div className="text-sm text-destructive">タスクが見つかりません</div>
+    );
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

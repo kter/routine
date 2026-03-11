@@ -1,12 +1,13 @@
 .PHONY: dev dev-frontend dev-backend \
         test test-unit test-integration test-e2e smoke-deploy \
-        lint lint-frontend lint-backend \
+        lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
+        format-check-backend format-check-frontend \
         build build-frontend build-lambda \
         tf-bootstrap tf-init tf-plan tf-apply tf-destroy \
         deploy deploy-frontend \
         db-migrate db-seed \
-        clean help
+        install-hooks clean help
 
 # ──────────────────────────────────────────────────────────────────────
 # Configuration
@@ -87,6 +88,14 @@ lint-backend:
 	cd $(BACKEND_DIR) && uv run ruff check src/
 	cd $(BACKEND_DIR) && uv run mypy src/
 
+## lint-backend-fast: Run fast backend lint checks for hooks
+lint-backend-fast:
+	cd $(BACKEND_DIR) && uv run ruff check src/ $(CURDIR)/$(TESTS_DIR)/
+
+## typecheck-frontend: Run TypeScript type-check on frontend
+typecheck-frontend:
+	cd $(FRONTEND_DIR) && npm run type-check
+
 # ──────────────────────────────────────────────────────────────────────
 # Format
 # ──────────────────────────────────────────────────────────────────────
@@ -107,6 +116,14 @@ fmt-backend:
 ## fmt-frontend: Format frontend with prettier
 fmt-frontend:
 	cd $(FRONTEND_DIR) && npm run format
+
+## format-check-backend: Check Python formatting without modifying files
+format-check-backend:
+	cd $(BACKEND_DIR) && uv run ruff format --check src/ $(CURDIR)/$(TESTS_DIR)/
+
+## format-check-frontend: Check frontend formatting without modifying files
+format-check-frontend:
+	cd $(FRONTEND_DIR) && npm run format:check
 
 # ──────────────────────────────────────────────────────────────────────
 # Build
@@ -220,6 +237,15 @@ db-seed:
 	@if [ "$(ENV)" != "dev" ]; then echo "db-seed is only for dev environment"; exit 1; fi
 	@echo "Seeding database for ENV=$(ENV)..."
 	AWS_PROFILE=$(ENV) psql "$${DB_URL}" -f $(DB_DIR)/seeds/001_dev_seed.sql
+
+# ──────────────────────────────────────────────────────────────────────
+# Git Hooks
+# ──────────────────────────────────────────────────────────────────────
+
+## install-hooks: Install git hooks via lefthook
+install-hooks:
+	mise exec -- lefthook install
+	@echo "Git hooks installed via lefthook."
 
 # ──────────────────────────────────────────────────────────────────────
 # Clean

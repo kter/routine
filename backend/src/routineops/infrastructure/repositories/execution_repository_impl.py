@@ -28,9 +28,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
             q = q.filter(ExecutionModel.task_id == task_id)
         if status is not None:
             q = q.filter(ExecutionModel.status == status.value)
-        return [
-            self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()
-        ]
+        return [self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()]
 
     def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
         m = (
@@ -125,11 +123,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return self._step_to_domain(m)
 
     def update_step(self, step: ExecutionStep) -> ExecutionStep:
-        m = (
-            self._db.query(ExecutionStepModel)
-            .filter(ExecutionStepModel.id == step.id)
-            .first()
-        )
+        m = self._db.query(ExecutionStepModel).filter(ExecutionStepModel.id == step.id).first()
         if m is None:
             raise ValueError(f"ExecutionStep {step.id} not found")
         m.status = step.status.value

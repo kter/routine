@@ -8,7 +8,11 @@ interface EvidenceUploadProps {
   onUploaded: (key: string) => void;
 }
 
-export function EvidenceUpload({ executionId, stepId, onUploaded }: EvidenceUploadProps) {
+export function EvidenceUpload({
+  executionId,
+  stepId,
+  onUploaded,
+}: EvidenceUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedKey, setUploadedKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +30,11 @@ export function EvidenceUpload({ executionId, stepId, onUploaded }: EvidenceUplo
         stepId,
         file.type,
       );
-      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
       setUploadedKey(key);
       onUploaded(key);
     } catch {

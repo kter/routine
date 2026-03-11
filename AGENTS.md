@@ -29,6 +29,7 @@ This repository is a RoutineOps tracker built on a split frontend, backend, and 
 make dev
 make test
 make lint
+make install-hooks
 make deploy ENV=prd
 make tf-plan ENV=dev
 ```

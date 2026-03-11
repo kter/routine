@@ -40,6 +40,7 @@ def get_current_tenant(
 
     try:
         from routineops.infrastructure.auth.cognito import verify_token
+
         claims = verify_token(token)
         sub = str(claims.get("sub", ""))
         tenant_id_str = str(claims.get("custom:tenant_id", ""))

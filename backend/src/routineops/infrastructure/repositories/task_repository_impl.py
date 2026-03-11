@@ -5,11 +5,11 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from routineops.domain.entities.task import Task, Step
+from routineops.domain.entities.task import Step, Task
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
-from routineops.infrastructure.db.models.task_model import TaskModel
 from routineops.infrastructure.db.models.step_model import StepModel
+from routineops.infrastructure.db.models.task_model import TaskModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
 from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 

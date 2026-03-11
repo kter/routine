@@ -1,13 +1,13 @@
 """Unit tests for ExecutionUsecases - step completion logic."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
 import pytest
 
 from routineops.domain.entities.execution import Execution, ExecutionStep
-from routineops.domain.entities.task import Task, Step
+from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
@@ -33,8 +33,8 @@ def make_step(
         instruction="",
         evidence_type=evidence_type,
         is_required=is_required,
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -52,8 +52,8 @@ def make_task(steps: list[Step] | None = None) -> Task:
         tags=[],
         metadata={},
         created_by=USER_SUB,
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
         steps=steps or [],
     )
 
@@ -71,13 +71,13 @@ def make_execution(
         started_by=USER_SUB,
         status=status,
         scheduled_for=None,
-        started_at=datetime.now(tz=timezone.utc),
+        started_at=datetime.now(tz=UTC),
         completed_at=None,
         duration_seconds=None,
         notes="",
         metadata={},
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
         steps=exec_steps or [],
     )
 
@@ -109,8 +109,8 @@ def make_exec_step(
         completed_at=None,
         completed_by=None,
         notes="",
-        created_at=datetime.now(tz=timezone.utc),
-        updated_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
+        updated_at=datetime.now(tz=UTC),
     )
 
 
@@ -201,10 +201,9 @@ class TestCompleteStep:
         )
         mock_exec_repo.update_step.return_value = completed_step
 
-        result = usecases.complete_step(
-            TENANT_ID, execution.id, exec_step.id, USER_SUB
-        )
+        result = usecases.complete_step(TENANT_ID, execution.id, exec_step.id, USER_SUB)
 
+        assert result == completed_step
         assert mock_exec_repo.update_step.called
         call_arg = mock_exec_repo.update_step.call_args[0][0]
         assert call_arg.status == StepStatus.COMPLETED
@@ -222,7 +221,10 @@ class TestCompleteStep:
 
         with pytest.raises(ValidationError, match="Evidence text is required"):
             usecases.complete_step(
-                TENANT_ID, execution.id, exec_step.id, USER_SUB,
+                TENANT_ID,
+                execution.id,
+                exec_step.id,
+                USER_SUB,
                 evidence_text=None,
             )
 
@@ -237,9 +239,7 @@ class TestCompleteStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="already"):
-            usecases.complete_step(
-                TENANT_ID, execution.id, exec_step.id, USER_SUB
-            )
+            usecases.complete_step(TENANT_ID, execution.id, exec_step.id, USER_SUB)
 
 
 class TestCompleteExecution:
@@ -258,6 +258,7 @@ class TestCompleteExecution:
 
         result = usecases.complete_execution(TENANT_ID, execution.id)
 
+        assert result == completed_exec
         call_arg = mock_exec_repo.update.call_args[0][0]
         assert call_arg.status == ExecutionStatus.COMPLETED
 
