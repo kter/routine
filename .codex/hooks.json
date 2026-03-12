@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd); python3 \"$repo_root/.claude/hooks/stop.py\"",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

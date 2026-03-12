@@ -3,7 +3,7 @@
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
-        claude-post-edit \
+        claude-post-edit agent-stop-unit-tests claude-stop-unit-tests \
         build build-frontend build-lambda \
         tf-bootstrap tf-init tf-plan tf-apply tf-destroy \
         deploy deploy-frontend \
@@ -145,6 +145,14 @@ claude-post-edit:
 		*) \
 			exit 0 ;; \
 	esac
+
+## agent-stop-unit-tests: Run unit tests from agent Stop hooks
+agent-stop-unit-tests:
+	@$(MAKE) test-unit
+
+## claude-stop-unit-tests: Backward-compatible alias for the shared Stop-hook unit tests target
+claude-stop-unit-tests:
+	@$(MAKE) agent-stop-unit-tests
 
 # ──────────────────────────────────────────────────────────────────────
 # Build
