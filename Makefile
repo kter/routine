@@ -3,6 +3,7 @@
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
+        claude-post-edit \
         build build-frontend build-lambda \
         tf-bootstrap tf-init tf-plan tf-apply tf-destroy \
         deploy deploy-frontend \
@@ -124,6 +125,26 @@ format-check-backend:
 ## format-check-frontend: Check frontend formatting without modifying files
 format-check-frontend:
 	cd $(FRONTEND_DIR) && npm run format:check
+
+## claude-post-edit: Run fast format/lint fixes for a single file edited by Claude Code (FILE=path/to/file)
+claude-post-edit:
+	@test -n "$(FILE)" || (echo "FILE is required" >&2; exit 1)
+	@file="$(FILE)"; \
+	case "$$file" in \
+		frontend/*.ts|frontend/*.tsx) \
+			rel_path="$${file#frontend/}"; \
+			cd $(FRONTEND_DIR) && npx eslint --fix "$$rel_path" && npx prettier --write "$$rel_path" ;; \
+		frontend/*.css) \
+			rel_path="$${file#frontend/}"; \
+			cd $(FRONTEND_DIR) && npx prettier --write "$$rel_path" ;; \
+		backend/*.py|tests/*.py|.claude/*.py|.claude/*/*.py|.claude/*/*/*.py) \
+			abs_path="$(CURDIR)/$$file"; \
+			cd $(BACKEND_DIR) && uv run ruff check --fix "$$abs_path" && uv run ruff format "$$abs_path" ;; \
+		infra/*.tf|infra/*.tfvars|infra/bootstrap/*.tf|infra/bootstrap/*.tfvars) \
+			terraform fmt "$(CURDIR)/$$file" >/dev/null ;; \
+		*) \
+			exit 0 ;; \
+	esac
 
 # ──────────────────────────────────────────────────────────────────────
 # Build
