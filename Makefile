@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-frontend test-unit test-integration test-e2e smoke-deploy \
+        test test-frontend test-unit test-unit-full test-integration test-e2e smoke-deploy \
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
@@ -54,6 +54,9 @@ test-frontend:
 ## test-unit: Run unit tests only
 test-unit:
 	cd $(BACKEND_DIR) && uv run pytest $(CURDIR)/$(TESTS_DIR)/unit -v --tb=short
+
+## test-unit-full: Run all frontend + backend unit tests
+test-unit-full: test-frontend test-unit
 
 ## test-integration: Run integration tests only
 test-integration:
