@@ -13,5 +13,3 @@ pre-push:
   commands:
     backend-tests:
       run: make test
-    e2e-tests:
-      run: make test-e2e

@@ -1,0 +1,73 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/e2e.yml"
+      - "frontend/**"
+      - "tests/e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "Makefile"
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Target environment"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prd
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.target_env || 'dev' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TARGET_ENV: ${{ github.event.inputs.target_env || 'dev' }}
+  PLAYWRIGHT_BASE_URL: ${{ (github.event.inputs.target_env || 'dev') == 'prd' && 'https://routine.devtools.site' || 'https://routine.dev.devtools.site' }}
+
+jobs:
+  e2e-chromium:
+    name: E2E (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+        env:
+          CI: true
+          E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ env.TARGET_ENV }}-chromium
+          path: |
+            tests/e2e/report
+            test-results
+          if-no-files-found: ignore
