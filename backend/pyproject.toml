@@ -16,6 +16,7 @@ dependencies = [
     "uvicorn[standard]>=0.30.0",
     "croniter>=2.0.0",
     "pytz>=2024.1",
+    "sentry-sdk>=2.54.0",
 ]
 
 [project.optional-dependencies]

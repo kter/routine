@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-unit test-integration test-e2e smoke-deploy \
+        test test-frontend test-unit test-integration test-e2e smoke-deploy \
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
@@ -43,8 +43,12 @@ dev-backend:
 # Testing
 # ──────────────────────────────────────────────────────────────────────
 
-## test: Run all tests (unit + integration)
-test: test-unit test-integration
+## test: Run frontend + backend tests
+test: test-frontend test-unit test-integration
+
+## test-frontend: Run frontend unit tests
+test-frontend:
+	cd $(FRONTEND_DIR) && npm run test
 
 ## test-unit: Run unit tests only
 test-unit:
@@ -234,13 +238,13 @@ tf-destroy:
 ## deploy: Full deploy (lambda build → tf-init → tf-plan → tf-apply → frontend build → S3 sync → CF cache invalidation)
 deploy:
 	@echo "Deploying to ENV=$(ENV)..."
-	$(MAKE) build-lambda; \
-	$(MAKE) tf-init ENV=$(ENV); \
-	$(MAKE) tf-plan ENV=$(ENV); \
-	$(MAKE) tf-apply ENV=$(ENV); \
-	$(MAKE) db-migrate ENV=$(ENV); \
-	$(MAKE) build-frontend ENV=$(ENV); \
-	$(MAKE) deploy-frontend ENV=$(ENV); \
+	$(MAKE) build-lambda && \
+	$(MAKE) tf-init ENV=$(ENV) && \
+	$(MAKE) tf-plan ENV=$(ENV) && \
+	$(MAKE) tf-apply ENV=$(ENV) && \
+	$(MAKE) db-migrate ENV=$(ENV) && \
+	$(MAKE) build-frontend ENV=$(ENV) && \
+	$(MAKE) deploy-frontend ENV=$(ENV) && \
 	if [ "$(ENV)" = "dev" ]; then $(MAKE) smoke-deploy ENV=$(ENV); fi
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache

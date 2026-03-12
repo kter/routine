@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 
 from routineops.infrastructure.db.engine import init_db
+from routineops.infrastructure.monitoring.sentry import init_sentry
 from routineops.interface.api.v1.router import router as v1_router
+
+init_sentry(include_fastapi=True)
 
 
 def create_app() -> FastAPI:

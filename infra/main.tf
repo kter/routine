@@ -66,12 +66,14 @@ data "aws_route53_zone" "zone" {
 module "cognito" {
   source = "./modules/cognito"
 
-  project             = "routineops"
-  environment         = terraform.workspace
-  api_domain          = local.config.api_domain
-  lambda_zip_path     = "${path.root}/../lambda.zip"
-  db_cluster_endpoint = module.aurora_dsql.cluster_endpoint
-  aws_region          = var.aws_region
+  project                   = "routineops"
+  environment               = terraform.workspace
+  api_domain                = local.config.api_domain
+  lambda_zip_path           = "${path.root}/../lambda.zip"
+  db_cluster_endpoint       = module.aurora_dsql.cluster_endpoint
+  aws_region                = var.aws_region
+  sentry_dsn                = var.sentry_dsn
+  sentry_traces_sample_rate = var.sentry_traces_sample_rate
 }
 
 module "aurora_dsql" {
@@ -96,26 +98,28 @@ module "evidence_storage" {
 module "lambda" {
   source = "./modules/lambda"
 
-  project              = "routineops"
-  environment          = terraform.workspace
-  lambda_zip_path      = "${path.root}/../lambda.zip"
-  db_cluster_endpoint  = module.aurora_dsql.cluster_endpoint
-  cognito_user_pool_id = module.cognito.user_pool_id
-  cognito_client_id    = module.cognito.client_id
-  evidence_bucket_name = module.evidence_storage.bucket_name
-  cors_origins         = "https://${local.config.frontend_domain}"
+  project                   = "routineops"
+  environment               = terraform.workspace
+  lambda_zip_path           = "${path.root}/../lambda.zip"
+  db_cluster_endpoint       = module.aurora_dsql.cluster_endpoint
+  cognito_user_pool_id      = module.cognito.user_pool_id
+  cognito_client_id         = module.cognito.client_id
+  evidence_bucket_name      = module.evidence_storage.bucket_name
+  cors_origins              = "https://${local.config.frontend_domain}"
+  sentry_dsn                = var.sentry_dsn
+  sentry_traces_sample_rate = var.sentry_traces_sample_rate
 }
 
 module "api_gateway" {
   source = "./modules/api_gateway"
 
-  project         = "routineops"
-  environment     = terraform.workspace
-  lambda_arn      = module.lambda.function_arn
+  project           = "routineops"
+  environment       = terraform.workspace
+  lambda_arn        = module.lambda.function_arn
   lambda_invoke_arn = module.lambda.invoke_arn
-  api_domain      = local.config.api_domain
-  hosted_zone_id  = data.aws_route53_zone.zone.zone_id
-  aws_region      = var.aws_region
+  api_domain        = local.config.api_domain
+  hosted_zone_id    = data.aws_route53_zone.zone.zone_id
+  aws_region        = var.aws_region
 
   providers = {
     aws           = aws
@@ -126,10 +130,10 @@ module "api_gateway" {
 module "frontend" {
   source = "./modules/frontend"
 
-  project          = "routineops"
-  environment      = terraform.workspace
-  frontend_domain  = local.config.frontend_domain
-  hosted_zone_id   = data.aws_route53_zone.zone.zone_id
+  project         = "routineops"
+  environment     = terraform.workspace
+  frontend_domain = local.config.frontend_domain
+  hosted_zone_id  = data.aws_route53_zone.zone.zone_id
 
   providers = {
     aws           = aws

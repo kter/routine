@@ -4,6 +4,14 @@
 
 data "aws_caller_identity" "current" {}
 
+locals {
+  sentry_env = var.sentry_dsn == null ? {} : {
+    SENTRY_DSN                = var.sentry_dsn
+    SENTRY_SEND_DEFAULT_PII   = "true"
+    SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
+  }
+}
+
 # ── PostConfirmation Lambda IAM Role ────────────────────────────────────────
 
 resource "aws_iam_role" "post_confirmation" {
@@ -59,10 +67,14 @@ resource "aws_lambda_function" "post_confirmation" {
   source_code_hash = filebase64sha256(var.lambda_zip_path)
 
   environment {
-    variables = {
-      DB_CLUSTER_ENDPOINT = var.db_cluster_endpoint
-      DB_NAME             = "postgres"
-    }
+    variables = merge(
+      {
+        ENV                 = var.environment
+        DB_CLUSTER_ENDPOINT = var.db_cluster_endpoint
+        DB_NAME             = "postgres"
+      },
+      local.sentry_env,
+    )
   }
 }
 

@@ -11,8 +11,12 @@ import uuid
 import boto3
 import psycopg2
 
+from routineops.infrastructure.monitoring.sentry import init_sentry
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+init_sentry(include_fastapi=False)
 
 
 def _get_dsql_token(hostname: str, region: str) -> str:

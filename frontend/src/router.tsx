@@ -1,6 +1,6 @@
-import { createBrowserRouter } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { createAppRouter } from "@/lib/monitoring/sentry";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -12,7 +12,7 @@ import ExecutionPage from "@/pages/ExecutionPage";
 import ExecutionListPage from "@/pages/ExecutionListPage";
 import ExecutionLogPage from "@/pages/ExecutionLogPage";
 
-export const router = createBrowserRouter([
+export const router = createAppRouter([
   {
     path: "/login",
     element: <LoginPage />,

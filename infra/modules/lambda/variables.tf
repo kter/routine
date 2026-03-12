@@ -35,3 +35,15 @@ variable "log_retention_days" {
   type    = number
   default = 30
 }
+
+variable "sentry_dsn" {
+  type      = string
+  default   = null
+  sensitive = true
+  nullable  = true
+}
+
+variable "sentry_traces_sample_rate" {
+  type    = number
+  default = 0.1
+}

@@ -5,6 +5,14 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+locals {
+  sentry_env = var.sentry_dsn == null ? {} : {
+    SENTRY_DSN                = var.sentry_dsn
+    SENTRY_SEND_DEFAULT_PII   = "true"
+    SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
+  }
+}
+
 # ── IAM Role ─────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "lambda" {
@@ -64,17 +72,20 @@ resource "aws_lambda_function" "api" {
   source_code_hash = filebase64sha256(var.lambda_zip_path)
 
   environment {
-    variables = {
-      ENV                  = var.environment
-      DB_TYPE              = "dsql"
-      DB_CLUSTER_ENDPOINT  = var.db_cluster_endpoint
-      DB_NAME              = "postgres"
-      COGNITO_USER_POOL_ID = var.cognito_user_pool_id
-      COGNITO_CLIENT_ID    = var.cognito_client_id
-      COGNITO_JWKS_URL = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/jwks.json"
-      EVIDENCE_BUCKET_NAME = var.evidence_bucket_name
-      CORS_ORIGINS         = var.cors_origins
-    }
+    variables = merge(
+      {
+        ENV                  = var.environment
+        DB_TYPE              = "dsql"
+        DB_CLUSTER_ENDPOINT  = var.db_cluster_endpoint
+        DB_NAME              = "postgres"
+        COGNITO_USER_POOL_ID = var.cognito_user_pool_id
+        COGNITO_CLIENT_ID    = var.cognito_client_id
+        COGNITO_JWKS_URL     = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/jwks.json"
+        EVIDENCE_BUCKET_NAME = var.evidence_bucket_name
+        CORS_ORIGINS         = var.cors_origins
+      },
+      local.sentry_env,
+    )
   }
 }
 
