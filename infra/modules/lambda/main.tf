@@ -6,11 +6,19 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 locals {
-  sentry_env = var.sentry_dsn == null ? {} : {
-    SENTRY_DSN                = var.sentry_dsn
+  sentry_enabled = var.sentry_dsn_parameter_name != null
+  sentry_env = local.sentry_enabled ? {
+    SENTRY_DSN_PARAMETER_NAME = var.sentry_dsn_parameter_name
     SENTRY_SEND_DEFAULT_PII   = "true"
     SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
-  }
+  } : {}
+  sentry_policy_statements = local.sentry_enabled ? [
+    {
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameter"]
+      Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.sentry_dsn_parameter_name}"
+    },
+  ] : []
 }
 
 # ── IAM Role ─────────────────────────────────────────────────────────────
@@ -39,22 +47,25 @@ resource "aws_iam_role_policy" "lambda_custom" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject",
-        ]
-        Resource = "arn:aws:s3:::${var.evidence_bucket_name}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["dsql:DbConnectAdmin"]
-        Resource = "*"
-      },
-    ]
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject",
+          ]
+          Resource = "arn:aws:s3:::${var.evidence_bucket_name}/*"
+        },
+        {
+          Effect   = "Allow"
+          Action   = ["dsql:DbConnectAdmin"]
+          Resource = "*"
+        },
+      ],
+      local.sentry_policy_statements,
+    )
   })
 }
 

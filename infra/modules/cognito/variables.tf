@@ -23,11 +23,10 @@ variable "aws_region" {
   type = string
 }
 
-variable "sentry_dsn" {
-  type      = string
-  default   = null
-  sensitive = true
-  nullable  = true
+variable "sentry_dsn_parameter_name" {
+  type     = string
+  default  = null
+  nullable = true
 }
 
 variable "sentry_traces_sample_rate" {

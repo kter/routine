@@ -4,11 +4,10 @@ variable "aws_region" {
   default     = "ap-northeast-1"
 }
 
-variable "sentry_dsn" {
-  description = "Optional Sentry DSN for Lambda monitoring"
+variable "sentry_dsn_parameter_name" {
+  description = "Optional SSM SecureString parameter name that stores the Sentry DSN"
   type        = string
   default     = null
-  sensitive   = true
   nullable    = true
 }
 

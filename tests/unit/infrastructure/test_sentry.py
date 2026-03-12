@@ -1,6 +1,9 @@
+from unittest.mock import Mock
+
 from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 
+from routineops.infrastructure.monitoring import sentry
 from routineops.infrastructure.monitoring.sentry import get_sentry_init_kwargs
 
 
@@ -55,3 +58,53 @@ def test_get_sentry_init_kwargs_defaults_invalid_values() -> None:
     assert kwargs["traces_sample_rate"] == 0.1
     assert len(kwargs["integrations"]) == 1
     assert isinstance(kwargs["integrations"][0], AwsLambdaIntegration)
+
+
+def test_get_sentry_init_kwargs_loads_dsn_from_ssm_parameter(monkeypatch) -> None:
+    sentry._get_secure_parameter.cache_clear()
+
+    get_parameter = Mock(
+        return_value={
+            "Parameter": {
+                "Value": "https://examplePublicKey@o0.ingest.sentry.io/0",
+            }
+        }
+    )
+    mock_ssm = Mock(get_parameter=get_parameter)
+    boto3_client = Mock(return_value=mock_ssm)
+    monkeypatch.setattr(sentry.boto3, "client", boto3_client)
+
+    kwargs = get_sentry_init_kwargs(
+        {
+            "AWS_REGION": "ap-northeast-1",
+            "ENV": "dev",
+            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/dsn",
+        },
+        include_fastapi=False,
+    )
+
+    assert kwargs is not None
+    assert kwargs["dsn"] == "https://examplePublicKey@o0.ingest.sentry.io/0"
+    boto3_client.assert_called_once_with("ssm", region_name="ap-northeast-1")
+    get_parameter.assert_called_once_with(
+        Name="/routineops/dev/sentry/dsn",
+        WithDecryption=True,
+    )
+
+
+def test_get_sentry_init_kwargs_prefers_direct_dsn_over_ssm(monkeypatch) -> None:
+    sentry._get_secure_parameter.cache_clear()
+    boto3_client = Mock()
+    monkeypatch.setattr(sentry.boto3, "client", boto3_client)
+
+    kwargs = get_sentry_init_kwargs(
+        {
+            "SENTRY_DSN": "https://direct.example/1",
+            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/dsn",
+        },
+        include_fastapi=False,
+    )
+
+    assert kwargs is not None
+    assert kwargs["dsn"] == "https://direct.example/1"
+    boto3_client.assert_not_called()

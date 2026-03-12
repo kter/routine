@@ -3,13 +3,22 @@
 ###############################################################################
 
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 locals {
-  sentry_env = var.sentry_dsn == null ? {} : {
-    SENTRY_DSN                = var.sentry_dsn
+  sentry_enabled = var.sentry_dsn_parameter_name != null
+  sentry_env = local.sentry_enabled ? {
+    SENTRY_DSN_PARAMETER_NAME = var.sentry_dsn_parameter_name
     SENTRY_SEND_DEFAULT_PII   = "true"
     SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
-  }
+  } : {}
+  sentry_policy_statements = local.sentry_enabled ? [
+    {
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameter"]
+      Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.sentry_dsn_parameter_name}"
+    },
+  ] : []
 }
 
 # ── PostConfirmation Lambda IAM Role ────────────────────────────────────────
@@ -38,18 +47,21 @@ resource "aws_iam_role_policy" "post_confirmation_custom" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["dsql:DbConnectAdmin"]
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["cognito-idp:AdminUpdateUserAttributes"]
-        Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
-      },
-    ]
+    Statement = concat(
+      [
+        {
+          Effect   = "Allow"
+          Action   = ["dsql:DbConnectAdmin"]
+          Resource = "*"
+        },
+        {
+          Effect   = "Allow"
+          Action   = ["cognito-idp:AdminUpdateUserAttributes"]
+          Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/*"
+        },
+      ],
+      local.sentry_policy_statements,
+    )
   })
 }
 
