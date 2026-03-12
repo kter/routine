@@ -62,11 +62,23 @@ logs/
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+test-results/
+tests/e2e/report/
+
+# Browser automation state
+.playwright-cli/
+
+# Local agent/session state
+.takt/
 
 # Frontend build
 frontend/dist/
 frontend/.vite/
 frontend/*.tsbuildinfo
+
+# Local debug screenshots
+/dev-*.png
+/frontend/*.png
 
 # Lambda zip
 lambda.zip
