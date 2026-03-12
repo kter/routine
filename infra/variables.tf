@@ -4,8 +4,8 @@ variable "aws_region" {
   default     = "ap-northeast-1"
 }
 
-variable "sentry_dsn_parameter_name" {
-  description = "Optional SSM SecureString parameter name that stores the Sentry DSN"
+variable "sentry_backend_dsn_parameter_name" {
+  description = "Optional SSM SecureString parameter name that stores the backend Sentry DSN"
   type        = string
   default     = null
   nullable    = true

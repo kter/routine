@@ -26,9 +26,9 @@ locals {
     ManagedBy   = "terraform"
   }
 
-  sentry_dsn_parameter_name = coalesce(
-    var.sentry_dsn_parameter_name,
-    "/routineops/${terraform.workspace}/sentry/dsn",
+  sentry_backend_dsn_parameter_name = coalesce(
+    var.sentry_backend_dsn_parameter_name,
+    "/routineops/${terraform.workspace}/sentry/backend/dsn",
   )
 }
 
@@ -77,7 +77,7 @@ module "cognito" {
   lambda_zip_path           = "${path.root}/../lambda.zip"
   db_cluster_endpoint       = module.aurora_dsql.cluster_endpoint
   aws_region                = var.aws_region
-  sentry_dsn_parameter_name = local.sentry_dsn_parameter_name
+  sentry_dsn_parameter_name = local.sentry_backend_dsn_parameter_name
   sentry_traces_sample_rate = var.sentry_traces_sample_rate
 }
 
@@ -111,7 +111,7 @@ module "lambda" {
   cognito_client_id         = module.cognito.client_id
   evidence_bucket_name      = module.evidence_storage.bucket_name
   cors_origins              = "https://${local.config.frontend_domain}"
-  sentry_dsn_parameter_name = local.sentry_dsn_parameter_name
+  sentry_dsn_parameter_name = local.sentry_backend_dsn_parameter_name
   sentry_traces_sample_rate = var.sentry_traces_sample_rate
 }
 

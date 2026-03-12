@@ -21,7 +21,7 @@ DB_DIR := db
 TESTS_DIR := tests
 
 LAMBDA_ZIP := lambda.zip
-SENTRY_DSN_PARAMETER_NAME ?= /routineops/$(ENV)/sentry/dsn
+SENTRY_FRONTEND_DSN_PARAMETER_NAME ?= /routineops/$(ENV)/sentry/frontend/dsn
 
 # ──────────────────────────────────────────────────────────────────────
 # Local Development
@@ -171,7 +171,7 @@ build-frontend:
 	@echo "Building frontend for ENV=$(ENV)..."
 	@if terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null 2>&1 && \
 		terraform -chdir=$(INFRA_DIR) output -raw api_url >/dev/null 2>&1; then \
-		sentry_dsn="$$(aws ssm get-parameter --name "$(SENTRY_DSN_PARAMETER_NAME)" --with-decryption --profile $(ENV) --query 'Parameter.Value' --output text 2>/dev/null || true)"; \
+		sentry_dsn="$$(aws ssm get-parameter --name "$(SENTRY_FRONTEND_DSN_PARAMETER_NAME)" --with-decryption --profile $(ENV) --query 'Parameter.Value' --output text 2>/dev/null || true)"; \
 		cd $(FRONTEND_DIR) && \
 		VITE_API_BASE_URL="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw api_url)" \
 		VITE_COGNITO_USER_POOL_ID="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw cognito_user_pool_id)" \

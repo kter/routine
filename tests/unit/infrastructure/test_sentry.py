@@ -78,7 +78,7 @@ def test_get_sentry_init_kwargs_loads_dsn_from_ssm_parameter(monkeypatch) -> Non
         {
             "AWS_REGION": "ap-northeast-1",
             "ENV": "dev",
-            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/dsn",
+            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/backend/dsn",
         },
         include_fastapi=False,
     )
@@ -87,7 +87,7 @@ def test_get_sentry_init_kwargs_loads_dsn_from_ssm_parameter(monkeypatch) -> Non
     assert kwargs["dsn"] == "https://examplePublicKey@o0.ingest.sentry.io/0"
     boto3_client.assert_called_once_with("ssm", region_name="ap-northeast-1")
     get_parameter.assert_called_once_with(
-        Name="/routineops/dev/sentry/dsn",
+        Name="/routineops/dev/sentry/backend/dsn",
         WithDecryption=True,
     )
 
@@ -100,7 +100,7 @@ def test_get_sentry_init_kwargs_prefers_direct_dsn_over_ssm(monkeypatch) -> None
     kwargs = get_sentry_init_kwargs(
         {
             "SENTRY_DSN": "https://direct.example/1",
-            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/dsn",
+            "SENTRY_DSN_PARAMETER_NAME": "/routineops/dev/sentry/backend/dsn",
         },
         include_fastapi=False,
     )
