@@ -1,5 +1,7 @@
 pre-commit:
   commands:
+    full-unit-tests:
+      run: make test-unit-full
     backend-lint:
       run: make lint-backend-fast
     backend-format:
@@ -11,7 +13,7 @@ pre-commit:
 
 pre-push:
   commands:
-    backend-tests:
-      run: make test
-    e2e-tests:
-      run: make test-e2e
+    full-unit-tests:
+      run: make test-unit-full
+    integration-tests:
+      run: make test-integration

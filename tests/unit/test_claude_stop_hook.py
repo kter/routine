@@ -42,10 +42,18 @@ def test_run_stop_hook_blocks_stop_when_unit_tests_fail(tmp_path: Path) -> None:
         text: bool,
         capture_output: bool,
     ) -> CompletedProcess[str]:
-        assert args == ["make", "agent-stop-unit-tests"]
         assert cwd == project_dir.resolve()
         assert text is True
         assert capture_output is True
+        if args[:2] == ["git", "status"]:
+            return CompletedProcess(
+                args=args,
+                returncode=0,
+                stdout=" M backend/src/routineops/main.py\n",
+                stderr="",
+            )
+
+        assert args == ["make", "agent-stop-unit-tests"]
         return CompletedProcess(
             args=args,
             returncode=1,
@@ -87,6 +95,14 @@ def test_run_stop_hook_warns_instead_of_blocking_when_already_active(tmp_path: P
         text: bool,
         capture_output: bool,
     ) -> CompletedProcess[str]:
+        if args[:2] == ["git", "status"]:
+            return CompletedProcess(
+                args=args,
+                returncode=0,
+                stdout=" M backend/src/routineops/main.py\n",
+                stderr="",
+            )
+
         return CompletedProcess(
             args=args,
             returncode=1,
@@ -124,10 +140,10 @@ def test_run_stop_hook_allows_stop_when_unit_tests_pass(tmp_path: Path) -> None:
         "{}",
         {"CLAUDE_PROJECT_DIR": str(project_dir)},
         MODULE_PATH,
-        lambda *args, **kwargs: CompletedProcess(
-            args=["make", "agent-stop-unit-tests"],
+        lambda args, **kwargs: CompletedProcess(
+            args=args,
             returncode=0,
-            stdout="",
+            stdout=" M backend/src/routineops/main.py\n" if args[:2] == ["git", "status"] else "",
             stderr="",
         ),
     )
@@ -162,3 +178,97 @@ def test_build_make_command_skips_when_target_is_missing(tmp_path: Path) -> None
     command = MODULE.build_make_command({"cwd": str(project_dir)}, {}, MODULE_PATH)
 
     assert command is None
+
+
+def test_run_stop_hook_skips_unit_tests_when_only_frontend_files_changed(
+    tmp_path: Path,
+) -> None:
+    project_dir = tmp_path / "repo"
+    project_dir.mkdir()
+    (project_dir / "Makefile").write_text(
+        "agent-stop-unit-tests:\n\t@echo ok\n",
+        encoding="utf-8",
+    )
+
+    calls: list[list[str]] = []
+
+    def runner(
+        args: list[str],
+        *,
+        cwd: Path,
+        text: bool,
+        capture_output: bool,
+    ) -> CompletedProcess[str]:
+        calls.append(args)
+        if args[:2] == ["git", "status"]:
+            return CompletedProcess(
+                args=args,
+                returncode=0,
+                stdout=" M frontend/src/main.tsx\n",
+                stderr="",
+            )
+
+        raise AssertionError("make should not run when only frontend files changed")
+
+    response = MODULE.run_stop_hook(
+        "{}",
+        {"CLAUDE_PROJECT_DIR": str(project_dir)},
+        MODULE_PATH,
+        runner,
+    )
+
+    assert response.exit_code == 0
+    assert response.stdout_json is None
+    assert response.stderr is None
+    assert calls == [["git", "status", "--porcelain=v1", "--untracked-files=all"]]
+
+
+def test_run_stop_hook_runs_unit_tests_when_backend_files_changed(tmp_path: Path) -> None:
+    project_dir = tmp_path / "repo"
+    project_dir.mkdir()
+    (project_dir / "Makefile").write_text(
+        "agent-stop-unit-tests:\n\t@echo ok\n",
+        encoding="utf-8",
+    )
+
+    calls: list[list[str]] = []
+
+    def runner(
+        args: list[str],
+        *,
+        cwd: Path,
+        text: bool,
+        capture_output: bool,
+    ) -> CompletedProcess[str]:
+        calls.append(args)
+        if args[:2] == ["git", "status"]:
+            return CompletedProcess(
+                args=args,
+                returncode=0,
+                stdout=" M backend/src/routineops/main.py\n",
+                stderr="",
+            )
+        if args == ["make", "agent-stop-unit-tests"]:
+            return CompletedProcess(
+                args=args,
+                returncode=0,
+                stdout="",
+                stderr="",
+            )
+
+        raise AssertionError(f"unexpected command: {args}")
+
+    response = MODULE.run_stop_hook(
+        "{}",
+        {"CLAUDE_PROJECT_DIR": str(project_dir)},
+        MODULE_PATH,
+        runner,
+    )
+
+    assert response.exit_code == 0
+    assert response.stdout_json is None
+    assert response.stderr is None
+    assert calls == [
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        ["make", "agent-stop-unit-tests"],
+    ]

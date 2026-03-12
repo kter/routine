@@ -5,6 +5,22 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+locals {
+  sentry_enabled = var.sentry_dsn_parameter_name != null
+  sentry_env = local.sentry_enabled ? {
+    SENTRY_DSN_PARAMETER_NAME = var.sentry_dsn_parameter_name
+    SENTRY_SEND_DEFAULT_PII   = "true"
+    SENTRY_TRACES_SAMPLE_RATE = tostring(var.sentry_traces_sample_rate)
+  } : {}
+  sentry_policy_statements = local.sentry_enabled ? [
+    {
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameter"]
+      Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter${var.sentry_dsn_parameter_name}"
+    },
+  ] : []
+}
+
 # ── IAM Role ─────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "lambda" {
@@ -31,22 +47,25 @@ resource "aws_iam_role_policy" "lambda_custom" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject",
-        ]
-        Resource = "arn:aws:s3:::${var.evidence_bucket_name}/*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["dsql:DbConnectAdmin"]
-        Resource = "*"
-      },
-    ]
+    Statement = concat(
+      [
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject",
+          ]
+          Resource = "arn:aws:s3:::${var.evidence_bucket_name}/*"
+        },
+        {
+          Effect   = "Allow"
+          Action   = ["dsql:DbConnectAdmin"]
+          Resource = "*"
+        },
+      ],
+      local.sentry_policy_statements,
+    )
   })
 }
 
@@ -64,17 +83,20 @@ resource "aws_lambda_function" "api" {
   source_code_hash = filebase64sha256(var.lambda_zip_path)
 
   environment {
-    variables = {
-      ENV                  = var.environment
-      DB_TYPE              = "dsql"
-      DB_CLUSTER_ENDPOINT  = var.db_cluster_endpoint
-      DB_NAME              = "postgres"
-      COGNITO_USER_POOL_ID = var.cognito_user_pool_id
-      COGNITO_CLIENT_ID    = var.cognito_client_id
-      COGNITO_JWKS_URL = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/jwks.json"
-      EVIDENCE_BUCKET_NAME = var.evidence_bucket_name
-      CORS_ORIGINS         = var.cors_origins
-    }
+    variables = merge(
+      {
+        ENV                  = var.environment
+        DB_TYPE              = "dsql"
+        DB_CLUSTER_ENDPOINT  = var.db_cluster_endpoint
+        DB_NAME              = "postgres"
+        COGNITO_USER_POOL_ID = var.cognito_user_pool_id
+        COGNITO_CLIENT_ID    = var.cognito_client_id
+        COGNITO_JWKS_URL     = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/jwks.json"
+        EVIDENCE_BUCKET_NAME = var.evidence_bucket_name
+        CORS_ORIGINS         = var.cors_origins
+      },
+      local.sentry_env,
+    )
   }
 }
 

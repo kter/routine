@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-unit test-integration test-e2e smoke-deploy \
+        test test-frontend test-unit test-unit-full test-integration test-e2e smoke-deploy \
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
@@ -21,6 +21,7 @@ DB_DIR := db
 TESTS_DIR := tests
 
 LAMBDA_ZIP := lambda.zip
+SENTRY_FRONTEND_DSN_PARAMETER_NAME ?= /routineops/$(ENV)/sentry/frontend/dsn
 
 # ──────────────────────────────────────────────────────────────────────
 # Local Development
@@ -43,12 +44,19 @@ dev-backend:
 # Testing
 # ──────────────────────────────────────────────────────────────────────
 
-## test: Run all tests (unit + integration)
-test: test-unit test-integration
+## test: Run frontend + backend tests
+test: test-frontend test-unit test-integration
+
+## test-frontend: Run frontend unit tests
+test-frontend:
+	cd $(FRONTEND_DIR) && npm run test
 
 ## test-unit: Run unit tests only
 test-unit:
 	cd $(BACKEND_DIR) && uv run pytest $(CURDIR)/$(TESTS_DIR)/unit -v --tb=short
+
+## test-unit-full: Run all frontend + backend unit tests
+test-unit-full: test-frontend test-unit
 
 ## test-integration: Run integration tests only
 test-integration:
@@ -166,10 +174,13 @@ build-frontend:
 	@echo "Building frontend for ENV=$(ENV)..."
 	@if terraform -chdir=$(INFRA_DIR) workspace select $(ENV) >/dev/null 2>&1 && \
 		terraform -chdir=$(INFRA_DIR) output -raw api_url >/dev/null 2>&1; then \
+		sentry_dsn="$$(aws ssm get-parameter --name "$(SENTRY_FRONTEND_DSN_PARAMETER_NAME)" --with-decryption --profile $(ENV) --query 'Parameter.Value' --output text 2>/dev/null || true)"; \
 		cd $(FRONTEND_DIR) && \
 		VITE_API_BASE_URL="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw api_url)" \
 		VITE_COGNITO_USER_POOL_ID="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw cognito_user_pool_id)" \
 		VITE_COGNITO_CLIENT_ID="$$(terraform -chdir=$(CURDIR)/$(INFRA_DIR) output -raw cognito_client_id)" \
+		VITE_SENTRY_DSN="$$sentry_dsn" \
+		VITE_SENTRY_ENVIRONMENT="$(ENV)" \
 		npm run build; \
 	else \
 		echo "Terraform outputs for ENV=$(ENV) are unavailable; using frontend/.env defaults."; \
@@ -234,13 +245,13 @@ tf-destroy:
 ## deploy: Full deploy (lambda build → tf-init → tf-plan → tf-apply → frontend build → S3 sync → CF cache invalidation)
 deploy:
 	@echo "Deploying to ENV=$(ENV)..."
-	$(MAKE) build-lambda; \
-	$(MAKE) tf-init ENV=$(ENV); \
-	$(MAKE) tf-plan ENV=$(ENV); \
-	$(MAKE) tf-apply ENV=$(ENV); \
-	$(MAKE) db-migrate ENV=$(ENV); \
-	$(MAKE) build-frontend ENV=$(ENV); \
-	$(MAKE) deploy-frontend ENV=$(ENV); \
+	$(MAKE) build-lambda && \
+	$(MAKE) tf-init ENV=$(ENV) && \
+	$(MAKE) tf-plan ENV=$(ENV) && \
+	$(MAKE) tf-apply ENV=$(ENV) && \
+	$(MAKE) db-migrate ENV=$(ENV) && \
+	$(MAKE) build-frontend ENV=$(ENV) && \
+	$(MAKE) deploy-frontend ENV=$(ENV) && \
 	if [ "$(ENV)" = "dev" ]; then $(MAKE) smoke-deploy ENV=$(ENV); fi
 
 ## deploy-frontend: Sync frontend build to S3 and invalidate CloudFront cache

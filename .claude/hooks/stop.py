@@ -12,6 +12,16 @@ from typing import Any, NamedTuple, Protocol
 
 MAX_SUMMARY_CHARS = 2000
 SUMMARY_LINE_COUNT = 20
+RELEVANT_CHANGE_PREFIXES = (
+    "backend/",
+    "tests/",
+    ".claude/hooks/",
+)
+RELEVANT_CHANGE_PATHS = {
+    "Makefile",
+    ".claude/settings.json",
+    ".codex/hooks.json",
+}
 
 
 class CommandRunner(Protocol):
@@ -84,6 +94,54 @@ def build_make_command(
     return project_dir, ["make", "agent-stop-unit-tests"]
 
 
+def parse_changed_file(status_line: str) -> str | None:
+    if len(status_line) < 4:
+        return None
+
+    changed_file = status_line[3:].strip()
+    if not changed_file:
+        return None
+
+    if " -> " in changed_file:
+        return changed_file.split(" -> ", maxsplit=1)[1].strip() or None
+
+    return changed_file
+
+
+def list_changed_files(
+    project_dir: Path,
+    runner: CommandRunner,
+) -> set[str] | None:
+    result = runner(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=project_dir,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        return None
+
+    return {
+        changed_file
+        for line in result.stdout.splitlines()
+        if (changed_file := parse_changed_file(line)) is not None
+    }
+
+
+def should_run_unit_tests(
+    project_dir: Path,
+    runner: CommandRunner,
+) -> bool:
+    changed_files = list_changed_files(project_dir, runner)
+    if changed_files is None:
+        return True
+
+    return any(
+        changed_file in RELEVANT_CHANGE_PATHS or changed_file.startswith(RELEVANT_CHANGE_PREFIXES)
+        for changed_file in changed_files
+    )
+
+
 def summarize_test_output(result: subprocess.CompletedProcess[str]) -> str:
     combined_output = "\n".join(
         part.strip()
@@ -121,9 +179,7 @@ def build_failure_response(
         stdout_json={
             "decision": "block",
             "reason": (
-                "Unit tests failed in the Stop hook. "
-                "Fix the failures before stopping.\n"
-                f"{summary}"
+                f"Unit tests failed in the Stop hook. Fix the failures before stopping.\n{summary}"
             ),
         },
     )
@@ -148,6 +204,9 @@ def run_stop_hook(
         return HookResponse(exit_code=0)
 
     project_dir, args = command
+    if not should_run_unit_tests(project_dir, runner):
+        return HookResponse(exit_code=0)
+
     result = runner(args, cwd=project_dir, text=True, capture_output=True)
     if result.returncode == 0:
         return HookResponse(exit_code=0)
