@@ -48,6 +48,43 @@ export class ApiError extends Error {
   }
 }
 
+function extractErrorMessage(body: unknown): string | null {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  const detail = (body as Record<string, unknown>).detail;
+  if (typeof detail === "string" && detail.trim() !== "") {
+    return detail;
+  }
+
+  const message = (body as Record<string, unknown>).message;
+  if (typeof message === "string" && message.trim() !== "") {
+    return message;
+  }
+
+  return null;
+}
+
+export function getApiErrorMessage(body: unknown, status: number): string {
+  return extractErrorMessage(body) ?? `HTTP ${status}`;
+}
+
+export function normalizeApiError(
+  error: unknown,
+  fallbackMessage: string,
+): Error {
+  if (error instanceof ApiError) {
+    return new Error(getApiErrorMessage(error.body, error.status));
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return new Error(fallbackMessage);
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getIdToken();
   const url = `${BASE_URL}${path}`;
@@ -63,7 +100,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new ApiError(response.status, `HTTP ${response.status}`, body);
+    throw new ApiError(
+      response.status,
+      getApiErrorMessage(body, response.status),
+      body,
+    );
   }
 
   if (response.status === 204) return undefined as T;

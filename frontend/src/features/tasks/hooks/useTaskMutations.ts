@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { normalizeApiError } from "@/lib/api/client";
 import { tasksApi } from "@/lib/api/tasks";
 import type { CreateTaskRequest, UpdateTaskRequest } from "../types";
 
@@ -12,7 +13,7 @@ export function useTaskMutations() {
     try {
       return await tasksApi.create(data);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error("Failed to create task");
+      const e = normalizeApiError(err, "Failed to create task");
       setError(e);
       throw e;
     } finally {
@@ -26,7 +27,7 @@ export function useTaskMutations() {
     try {
       return await tasksApi.update(id, data);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error("Failed to update task");
+      const e = normalizeApiError(err, "Failed to update task");
       setError(e);
       throw e;
     } finally {
@@ -40,7 +41,7 @@ export function useTaskMutations() {
     try {
       await tasksApi.delete(id);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error("Failed to delete task");
+      const e = normalizeApiError(err, "Failed to delete task");
       setError(e);
       throw e;
     } finally {
