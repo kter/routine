@@ -3,6 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from routineops.app.request_context import RequestContext
 from routineops.application.container import (
     build_dashboard_usecases,
     build_execution_usecases,
@@ -15,11 +16,18 @@ from routineops.usecases.execution_usecases import ExecutionUsecases
 from routineops.usecases.task_usecases import TaskUsecases
 
 
+def make_context() -> RequestContext:
+    return RequestContext(
+        tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        user_sub="container-user",
+    )
+
+
 def test_build_task_usecases_returns_task_usecases() -> None:
     db_session = MagicMock(spec=Session)
     usecases = build_task_usecases(
         db=db_session,
-        tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        context=make_context(),
     )
 
     assert isinstance(usecases, TaskUsecases)
@@ -31,7 +39,7 @@ def test_build_execution_usecases_uses_injected_storage() -> None:
 
     usecases = build_execution_usecases(
         db=db_session,
-        tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        context=make_context(),
         storage=storage,
     )
 
@@ -43,7 +51,7 @@ def test_build_dashboard_usecases_returns_dashboard_usecases() -> None:
     db_session = MagicMock(spec=Session)
     usecases = build_dashboard_usecases(
         db=db_session,
-        tenant_id=UUID("00000000-0000-0000-0000-000000000001"),
+        context=make_context(),
     )
 
     assert isinstance(usecases, DashboardUsecases)

@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from routineops.app.request_context import RequestContext
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.cron_expression import CronExpression
@@ -65,8 +66,13 @@ def mock_repo() -> MagicMock:
 
 
 @pytest.fixture
-def usecases(mock_repo: MagicMock) -> TaskUsecases:
-    return TaskUsecases(mock_repo)
+def request_context() -> RequestContext:
+    return RequestContext(tenant_id=TENANT_ID, user_sub=USER_SUB)
+
+
+@pytest.fixture
+def usecases(mock_repo: MagicMock, request_context: RequestContext) -> TaskUsecases:
+    return TaskUsecases(mock_repo, request_context)
 
 
 class TestListTasks:
@@ -74,14 +80,14 @@ class TestListTasks:
         task = make_task()
         mock_repo.list.return_value = [task]
 
-        result = usecases.list_tasks(TENANT_ID)
+        result = usecases.list_tasks()
 
         mock_repo.list.assert_called_once_with(TENANT_ID, active_only=False)
         assert result == [task]
 
     def test_active_only_flag(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
         mock_repo.list.return_value = []
-        usecases.list_tasks(TENANT_ID, active_only=True)
+        usecases.list_tasks(active_only=True)
         mock_repo.list.assert_called_once_with(TENANT_ID, active_only=True)
 
 
@@ -90,7 +96,7 @@ class TestGetTask:
         task = make_task()
         mock_repo.get_with_steps.return_value = task
 
-        result = usecases.get_task(TENANT_ID, task.id)
+        result = usecases.get_task(task.id)
 
         assert result == task
 
@@ -101,7 +107,7 @@ class TestGetTask:
         task_id = uuid4()
 
         with pytest.raises(NotFoundError, match="Task"):
-            usecases.get_task(TENANT_ID, task_id)
+            usecases.get_task(task_id)
 
 
 class TestCreateTask:
@@ -112,10 +118,8 @@ class TestCreateTask:
         mock_repo.create.return_value = task
 
         result = usecases.create_task(
-            tenant_id=TENANT_ID,
             title="月次パッチ",
             cron_expression="0 10 1 * *",
-            created_by=USER_SUB,
         )
 
         mock_repo.create.assert_called_once()
@@ -126,10 +130,8 @@ class TestCreateTask:
     ) -> None:
         with pytest.raises(ValidationError):
             usecases.create_task(
-                tenant_id=TENANT_ID,
                 title="Test",
                 cron_expression="invalid",
-                created_by=USER_SUB,
             )
 
     def test_creates_steps_when_provided(
@@ -138,10 +140,8 @@ class TestCreateTask:
         mock_repo.create.side_effect = lambda created_task: created_task
 
         result = usecases.create_task(
-            tenant_id=TENANT_ID,
             title="テストタスク",
             cron_expression="0 10 * * *",
-            created_by=USER_SUB,
             steps=[{"position": 1, "title": "確認ステップ"}],
         )
 
@@ -159,10 +159,8 @@ class TestCreateTask:
         mock_repo.create.side_effect = lambda created_task: created_task
 
         usecases.create_task(
-            tenant_id=TENANT_ID,
             title="集約作成タスク",
             cron_expression="0 10 * * *",
-            created_by=USER_SUB,
             steps=[{"position": 1, "title": "集約手順"}],
         )
 
@@ -174,10 +172,8 @@ class TestCreateTask:
         mock_repo.create.side_effect = lambda created_task: created_task
 
         result = usecases.create_task(
-            tenant_id=TENANT_ID,
             title="timezone test",
             cron_expression="0 10 * * *",
-            created_by=USER_SUB,
             timezone="",
         )
 
@@ -189,7 +185,7 @@ class TestDeleteTask:
         task = make_task()
         mock_repo.get.return_value = task
 
-        usecases.delete_task(TENANT_ID, task.id)
+        usecases.delete_task(task.id)
 
         mock_repo.delete.assert_called_once_with(TENANT_ID, task.id)
 
@@ -199,7 +195,7 @@ class TestDeleteTask:
         mock_repo.get.return_value = None
 
         with pytest.raises(NotFoundError):
-            usecases.delete_task(TENANT_ID, uuid4())
+            usecases.delete_task(uuid4())
 
 
 class TestUpdateTask:
@@ -216,8 +212,8 @@ class TestUpdateTask:
         mock_repo.get_with_steps.side_effect = [kept_task, cleared_task]
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        kept_result = usecases.update_task(TENANT_ID, kept_task.id, title="手順は保持")
-        cleared_result = usecases.update_task(TENANT_ID, cleared_task.id, steps=[])
+        kept_result = usecases.update_task(kept_task.id, title="手順は保持")
+        cleared_result = usecases.update_task(cleared_task.id, steps=[])
 
         kept_update = mock_repo.update.call_args_list[0].args[0]
         cleared_update = mock_repo.update.call_args_list[1].args[0]
@@ -240,7 +236,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(TENANT_ID, task.id, title="更新後タイトル")
+        result = usecases.update_task(task.id, title="更新後タイトル")
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.title == "更新後タイトル"
@@ -265,7 +261,6 @@ class TestUpdateTask:
         mock_repo.update.return_value = replaced_task
 
         result = usecases.update_task(
-            TENANT_ID,
             task.id,
             steps=[
                 {
@@ -296,7 +291,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(TENANT_ID, task.id, timezone="")
+        result = usecases.update_task(task.id, timezone="")
 
         assert result.timezone == "Asia/Tokyo"
 
@@ -308,7 +303,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(TENANT_ID, task.id, steps=[])
+        result = usecases.update_task(task.id, steps=[])
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.steps == []
@@ -321,11 +316,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(
-            TENANT_ID,
-            task.id,
-            steps=[{"position": 1, "title": "既定値テスト"}],
-        )
+        result = usecases.update_task(task.id, steps=[{"position": 1, "title": "既定値テスト"}])
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.steps[0].instruction == ""
@@ -341,11 +332,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(
-            TENANT_ID,
-            task.id,
-            steps=[{"position": 1, "title": "新手順"}],
-        )
+        result = usecases.update_task(task.id, steps=[{"position": 1, "title": "新手順"}])
 
         mock_repo.update.assert_called_once()
         assert result.steps[0].title == "新手順"

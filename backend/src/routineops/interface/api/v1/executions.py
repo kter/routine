@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from routineops.domain.exceptions import NotFoundError, ValidationError
-from routineops.interface.api.deps import TenantDep, get_execution_usecases
+from routineops.interface.api.deps import RequestContextDep, get_execution_usecases
 from routineops.interface.schemas.execution import (
     AbandonExecutionRequest,
     CompleteExecutionRequest,
@@ -54,32 +54,36 @@ def _map_execution(execution, task_title: str | None = None) -> ExecutionRespons
 
 
 @router.get("", response_model=list[ExecutionResponse])
-def list_executions(tenant: TenantDep, usecases: ExecUsecasesDep) -> list[ExecutionResponse]:
-    tenant_id, _ = tenant
-    return [_map_execution(e) for e in usecases.list_executions(tenant_id)]
+def list_executions(
+    context: RequestContextDep, usecases: ExecUsecasesDep
+) -> list[ExecutionResponse]:
+    _ = context
+    return [_map_execution(e) for e in usecases.list_executions()]
 
 
 @router.get("/{execution_id}", response_model=ExecutionResponse)
 def get_execution(
-    execution_id: UUID, tenant: TenantDep, usecases: ExecUsecasesDep
+    execution_id: UUID,
+    context: RequestContextDep,
+    usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
-        return _map_execution(usecases.get_execution(tenant_id, execution_id))
+        return _map_execution(usecases.get_execution(execution_id))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.post("", response_model=ExecutionResponse, status_code=status.HTTP_201_CREATED)
 def start_execution(
-    body: StartExecutionRequest, tenant: TenantDep, usecases: ExecUsecasesDep
+    body: StartExecutionRequest,
+    context: RequestContextDep,
+    usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    tenant_id, sub = tenant
+    _ = context
     try:
         execution = usecases.start_execution(
-            tenant_id=tenant_id,
             task_id=body.task_id,
-            started_by=sub,
             scheduled_for=body.scheduled_for,
             notes=body.notes,
         )
@@ -95,16 +99,14 @@ def complete_step(
     execution_id: UUID,
     step_id: UUID,
     body: CompleteStepRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionStepResponse:
-    tenant_id, sub = tenant
+    _ = context
     try:
         step = usecases.complete_step(
-            tenant_id=tenant_id,
             execution_id=execution_id,
             step_id=step_id,
-            completed_by=sub,
             evidence_text=body.evidence_text,
             evidence_image_key=body.evidence_image_key,
             notes=body.notes,
@@ -132,12 +134,12 @@ def complete_step(
 def skip_step(
     execution_id: UUID,
     step_id: UUID,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionStepResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
-        step = usecases.skip_step(tenant_id, execution_id, step_id)
+        step = usecases.skip_step(execution_id, step_id)
         return ExecutionStepResponse(
             id=step.id,
             execution_id=step.execution_id,
@@ -161,14 +163,12 @@ def skip_step(
 def complete_execution(
     execution_id: UUID,
     body: CompleteExecutionRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
-        return _map_execution(
-            usecases.complete_execution(tenant_id, execution_id, notes=body.notes)
-        )
+        return _map_execution(usecases.complete_execution(execution_id, notes=body.notes))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ValidationError as e:
@@ -179,12 +179,12 @@ def complete_execution(
 def abandon_execution(
     execution_id: UUID,
     body: AbandonExecutionRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
-        return _map_execution(usecases.abandon_execution(tenant_id, execution_id, notes=body.notes))
+        return _map_execution(usecases.abandon_execution(execution_id, notes=body.notes))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ValidationError as e:
@@ -199,14 +199,12 @@ def get_evidence_upload_url(
     execution_id: UUID,
     step_id: UUID,
     body: EvidenceUploadUrlRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> EvidenceUploadUrlResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
-        upload_url, key = usecases.get_evidence_upload_url(
-            tenant_id, execution_id, step_id, body.content_type
-        )
+        upload_url, key = usecases.get_evidence_upload_url(execution_id, step_id, body.content_type)
         return EvidenceUploadUrlResponse(upload_url=upload_url, key=key)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

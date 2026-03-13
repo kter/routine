@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from routineops.domain.exceptions import NotFoundError, ValidationError
-from routineops.interface.api.deps import TenantDep, get_task_usecases
+from routineops.interface.api.deps import RequestContextDep, get_task_usecases
 from routineops.interface.schemas.task import (
     CreateTaskRequest,
     StepResponse,
@@ -50,16 +50,16 @@ def _map_task(task) -> TaskResponse:  # type: ignore[no-untyped-def]
 
 
 @router.get("", response_model=list[TaskResponse])
-def list_tasks(tenant: TenantDep, usecases: TaskUsecasesDep) -> list[TaskResponse]:
-    tenant_id, _ = tenant
-    return [_map_task(t) for t in usecases.list_tasks(tenant_id)]
+def list_tasks(context: RequestContextDep, usecases: TaskUsecasesDep) -> list[TaskResponse]:
+    _ = context
+    return [_map_task(t) for t in usecases.list_tasks()]
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(task_id: UUID, tenant: TenantDep, usecases: TaskUsecasesDep) -> TaskResponse:
-    tenant_id, _ = tenant
+def get_task(task_id: UUID, context: RequestContextDep, usecases: TaskUsecasesDep) -> TaskResponse:
+    _ = context
     try:
-        return _map_task(usecases.get_task(tenant_id, task_id))
+        return _map_task(usecases.get_task(task_id))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
@@ -67,16 +67,14 @@ def get_task(task_id: UUID, tenant: TenantDep, usecases: TaskUsecasesDep) -> Tas
 @router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 def create_task(
     body: CreateTaskRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: TaskUsecasesDep,
 ) -> TaskResponse:
-    tenant_id, sub = tenant
+    _ = context
     try:
         task = usecases.create_task(
-            tenant_id=tenant_id,
             title=body.title,
             cron_expression=body.cron_expression,
-            created_by=sub,
             description=body.description,
             timezone=body.timezone,
             estimated_minutes=body.estimated_minutes,
@@ -92,13 +90,13 @@ def create_task(
 def update_task(
     task_id: UUID,
     body: UpdateTaskRequest,
-    tenant: TenantDep,
+    context: RequestContextDep,
     usecases: TaskUsecasesDep,
 ) -> TaskResponse:
-    tenant_id, _ = tenant
+    _ = context
     try:
         updates = {k: v for k, v in body.model_dump().items() if v is not None}
-        return _map_task(usecases.update_task(tenant_id, task_id, **updates))
+        return _map_task(usecases.update_task(task_id, **updates))
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ValidationError as e:
@@ -106,9 +104,9 @@ def update_task(
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_task(task_id: UUID, tenant: TenantDep, usecases: TaskUsecasesDep) -> None:
-    tenant_id, _ = tenant
+def delete_task(task_id: UUID, context: RequestContextDep, usecases: TaskUsecasesDep) -> None:
+    _ = context
     try:
-        usecases.delete_task(tenant_id, task_id)
+        usecases.delete_task(task_id)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

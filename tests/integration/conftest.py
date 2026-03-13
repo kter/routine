@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from routineops.app.request_context import RequestContext
 from routineops.infrastructure.db import (
     models as _models,  # noqa: F401 - triggers SQLAlchemy model registration
 )
@@ -74,7 +75,7 @@ def tenant_client_factory(
             yield db_session
 
         def override_get_tenant():
-            return tenant_id, user_sub
+            return RequestContext(tenant_id=tenant_id, user_sub=user_sub)
 
         def override_get_storage():
             return mock_storage

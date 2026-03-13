@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from routineops.app.request_context import RequestContext
 from routineops.application.container import (
     build_dashboard_usecases,
     build_execution_usecases,
@@ -23,18 +24,20 @@ from routineops.usecases.task_usecases import TaskUsecases
 security = HTTPBearer()
 
 
-def get_current_tenant(
+def get_request_context(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-) -> tuple[UUID, str]:
+) -> RequestContext:
     """
-    Verify JWT and extract (tenant_id, user_sub).
-    Returns (tenant_id, sub) tuple.
+    Verify JWT and extract request-scoped auth context.
     """
     settings = get_api_settings()
 
     # Allow bypass in test mode
     if settings.test_mode:
-        return settings.test_tenant_id, settings.test_user_sub
+        return RequestContext(
+            tenant_id=settings.test_tenant_id,
+            user_sub=settings.test_user_sub,
+        )
 
     token = credentials.credentials
 
@@ -49,7 +52,11 @@ def get_current_tenant(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="tenant_id not found in token",
             )
-        return UUID(tenant_id_str), sub
+        return RequestContext(
+            tenant_id=UUID(tenant_id_str),
+            user_sub=sub,
+            auth_claims=claims,
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,7 +64,9 @@ def get_current_tenant(
         ) from e
 
 
-TenantDep = Annotated[tuple[UUID, str], Depends(get_current_tenant)]
+get_current_tenant = get_request_context
+
+RequestContextDep = Annotated[RequestContext, Depends(get_request_context)]
 DbDep = Annotated[Session, Depends(get_db)]
 
 
@@ -66,20 +75,17 @@ def get_storage() -> S3StorageImpl:
     return build_storage(bucket_name=settings.evidence_bucket_name)
 
 
-def get_task_usecases(tenant: TenantDep, db: DbDep) -> TaskUsecases:
-    tenant_id, _ = tenant
-    return build_task_usecases(db=db, tenant_id=tenant_id)
+def get_task_usecases(context: RequestContextDep, db: DbDep) -> TaskUsecases:
+    return build_task_usecases(db=db, context=context)
 
 
 def get_execution_usecases(
-    tenant: TenantDep,
+    context: RequestContextDep,
     db: DbDep,
     storage: Annotated[S3StorageImpl, Depends(get_storage)],
 ) -> ExecutionUsecases:
-    tenant_id, _ = tenant
-    return build_execution_usecases(db=db, tenant_id=tenant_id, storage=storage)
+    return build_execution_usecases(db=db, context=context, storage=storage)
 
 
-def get_dashboard_usecases(tenant: TenantDep, db: DbDep) -> DashboardUsecases:
-    tenant_id, _ = tenant
-    return build_dashboard_usecases(db=db, tenant_id=tenant_id)
+def get_dashboard_usecases(context: RequestContextDep, db: DbDep) -> DashboardUsecases:
+    return build_dashboard_usecases(db=db, context=context)
