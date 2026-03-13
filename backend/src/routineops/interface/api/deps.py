@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from routineops.app.auth import TENANT_ID_CLAIM
 from routineops.app.request_context import RequestContext
 from routineops.application.container import (
     build_dashboard_usecases,
@@ -46,7 +47,7 @@ def get_request_context(
 
         claims = verify_token(token)
         sub = str(claims.get("sub", ""))
-        tenant_id_str = str(claims.get("custom:tenant_id", ""))
+        tenant_id_str = str(claims.get(TENANT_ID_CLAIM, ""))
         if not tenant_id_str:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

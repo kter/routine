@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-from routineops.application.services.provision_tenant_service import (
+from routineops.application.tenants.provisioning import (
     ProvisionTenantService,
     SignupUser,
 )
@@ -19,7 +19,7 @@ def test_provision_for_signup_creates_tenant_and_sets_attribute() -> None:
     )
 
     with patch(
-        "routineops.application.services.provision_tenant_service.uuid4",
+        "routineops.application.tenants.provisioning.uuid4",
         return_value="tenant-123",
     ):
         tenant_id = service.provision_for_signup(user)
@@ -43,7 +43,7 @@ def test_provision_for_signup_uses_full_email_when_missing_at_sign() -> None:
     service = ProvisionTenantService(tenant_gateway, user_attribute_gateway)
 
     with patch(
-        "routineops.application.services.provision_tenant_service.uuid4",
+        "routineops.application.tenants.provisioning.uuid4",
         return_value="tenant-456",
     ):
         service.provision_for_signup(

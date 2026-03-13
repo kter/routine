@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from routineops.application.services.provision_tenant_service import SignupUser
+from routineops.application.tenants.provisioning import SignupUser
 from routineops.infrastructure.auth.post_confirmation_trigger import handler
 
 
@@ -46,7 +46,7 @@ class TestTriggerSourceFiltering:
         event = _make_event(trigger_source=trigger_source)
 
         with patch(
-            "routineops.infrastructure.auth.post_confirmation_trigger._build_service"
+            "routineops.infrastructure.auth.post_confirmation_trigger.build_tenant_provisioning_service"
         ) as build_service:
             result = handler(event, context=None)
 
@@ -66,11 +66,11 @@ def test_provisions_tenant_for_signup_user() -> None:
 
     with (
         patch(
-            "routineops.infrastructure.auth.post_confirmation_trigger.get_post_confirmation_settings",
+            "routineops.infrastructure.auth.post_confirmation_trigger.get_tenant_provisioning_settings",
             return_value=settings,
         ),
         patch(
-            "routineops.infrastructure.auth.post_confirmation_trigger._build_service",
+            "routineops.infrastructure.auth.post_confirmation_trigger.build_tenant_provisioning_service",
             return_value=service,
         ) as build_service,
     ):
@@ -96,7 +96,7 @@ def test_missing_db_cluster_endpoint_raises() -> None:
     )
 
     with patch(
-        "routineops.infrastructure.auth.post_confirmation_trigger.get_post_confirmation_settings",
+        "routineops.infrastructure.auth.post_confirmation_trigger.get_tenant_provisioning_settings",
         return_value=settings,
     ):
         with pytest.raises(ValueError, match="DB_CLUSTER_ENDPOINT is not configured"):

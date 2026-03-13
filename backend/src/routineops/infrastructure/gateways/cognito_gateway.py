@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import boto3
 
+from routineops.app.auth import TENANT_ID_CLAIM
+
 
 class CognitoGateway:
     def __init__(self, region: str) -> None:
@@ -12,6 +14,6 @@ class CognitoGateway:
             UserPoolId=user_pool_id,
             Username=username,
             UserAttributes=[
-                {"Name": "custom:tenant_id", "Value": tenant_id},
+                {"Name": TENANT_ID_CLAIM, "Value": tenant_id},
             ],
         )

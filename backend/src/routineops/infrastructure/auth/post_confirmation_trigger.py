@@ -2,35 +2,17 @@
 
 import logging
 
-from routineops.application.services.provision_tenant_service import (
-    ProvisionTenantService,
+from routineops.application.tenants import (
     SignupUser,
+    build_tenant_provisioning_service,
 )
-from routineops.config.settings import PostConfirmationSettings, get_post_confirmation_settings
-from routineops.infrastructure.gateways.cognito_gateway import CognitoGateway
-from routineops.infrastructure.gateways.dsql_tenant_provisioning_gateway import (
-    DsqlTenantProvisioningGateway,
-)
+from routineops.config.settings import get_tenant_provisioning_settings
 from routineops.infrastructure.monitoring.sentry import init_sentry
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 init_sentry(include_fastapi=False)
-
-
-def _build_service(settings: PostConfirmationSettings) -> ProvisionTenantService:
-    if not settings.db_cluster_endpoint:
-        raise ValueError("DB_CLUSTER_ENDPOINT is not configured")
-
-    return ProvisionTenantService(
-        tenant_gateway=DsqlTenantProvisioningGateway(
-            cluster_endpoint=settings.db_cluster_endpoint,
-            region=settings.aws_region,
-            db_name=settings.db_name,
-        ),
-        user_attribute_gateway=CognitoGateway(region=settings.aws_region),
-    )
 
 
 def handler(event: dict[str, object], context: object) -> dict[str, object]:
@@ -48,9 +30,9 @@ def handler(event: dict[str, object], context: object) -> dict[str, object]:
     user_pool_id = str(event.get("userPoolId", ""))
     username = str(event.get("userName", ""))
 
-    settings = get_post_confirmation_settings()
+    settings = get_tenant_provisioning_settings()
     logger.info("Creating tenant for user %s, email %s", username, email)
-    service = _build_service(settings)
+    service = build_tenant_provisioning_service(settings)
     tenant_id = service.provision_for_signup(
         SignupUser(
             email=email,
