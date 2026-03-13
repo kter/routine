@@ -19,6 +19,10 @@ export function useExecutions() {
   return { executions, isLoading, error, refetch };
 }
 
+export function getExecutionHookError(error: Error | null): Error | null {
+  return error;
+}
+
 export function useExecution(id: string) {
   const fetchExecution = useCallback(async () => executionsApi.get(id), [id]);
   const {
@@ -68,7 +72,8 @@ export function useExecution(id: string) {
   return {
     execution,
     isLoading,
-    error: actionError ?? error,
+    error: getExecutionHookError(error),
+    actionError,
     completeStep,
     skipStep,
     completeExecution,
