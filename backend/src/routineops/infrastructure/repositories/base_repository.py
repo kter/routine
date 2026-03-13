@@ -17,6 +17,6 @@ class BaseRepository:
                 f"Repository tenant mismatch: expected {self._tenant_id}, got {tenant_id}"
             )
 
-    def _query(self, model_class: type[Any]) -> Query:
+    def _query(self, model_class: type[Any]) -> Query[Any]:
         """Build a tenant-scoped query for the given SQLAlchemy model."""
         return self._db.query(model_class).filter(model_class.tenant_id == self._tenant_id)

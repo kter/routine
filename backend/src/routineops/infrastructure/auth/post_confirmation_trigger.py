@@ -33,15 +33,20 @@ def _build_service(settings: PostConfirmationSettings) -> ProvisionTenantService
     )
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, object], context: object) -> dict[str, object]:
     trigger_source = event.get("triggerSource", "")
     if trigger_source != "PostConfirmation_ConfirmSignUp":
         return event
 
-    user_attributes = event.get("request", {}).get("userAttributes", {})
-    email: str = user_attributes.get("email", "")
-    user_pool_id: str = event.get("userPoolId", "")
-    username: str = event.get("userName", "")
+    request_data = event.get("request", {})
+    if not isinstance(request_data, dict):
+        request_data = {}
+    user_attributes = request_data.get("userAttributes", {})
+    if not isinstance(user_attributes, dict):
+        user_attributes = {}
+    email = str(user_attributes.get("email", ""))
+    user_pool_id = str(event.get("userPoolId", ""))
+    username = str(event.get("userName", ""))
 
     settings = get_post_confirmation_settings()
     logger.info("Creating tenant for user %s, email %s", username, email)

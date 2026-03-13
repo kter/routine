@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -22,6 +23,8 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         tenant_id: UUID,
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
+        scheduled_from: datetime | None = None,
+        scheduled_to: datetime | None = None,
     ) -> list[Execution]:
         self._assert_tenant(tenant_id)
         q = self._query(ExecutionModel)
@@ -29,6 +32,10 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
             q = q.filter(ExecutionModel.task_id == task_id)
         if status is not None:
             q = q.filter(ExecutionModel.status == status.value)
+        if scheduled_from is not None:
+            q = q.filter(ExecutionModel.scheduled_for >= scheduled_from)
+        if scheduled_to is not None:
+            q = q.filter(ExecutionModel.scheduled_for <= scheduled_to)
         return [self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()]
 
     def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:

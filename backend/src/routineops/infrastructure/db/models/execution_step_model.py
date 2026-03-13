@@ -21,7 +21,7 @@ class ExecutionStepModel(Base, TimestampMixin):
     )
     step_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
-    step_snapshot: Mapped[dict] = mapped_column(JSON, nullable=False)
+    step_snapshot: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
     evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     evidence_image_key: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 
 JsonArray = list[object]
 JsonObject = dict[str, object]
 
 
-def decode_json_array(value: JsonArray | str | None) -> JsonArray:
+def decode_json_array(value: Sequence[object] | str | None) -> JsonArray:
     """Normalize Aurora DSQL TEXT-backed JSON arrays into Python lists."""
     if value is None:
         return []

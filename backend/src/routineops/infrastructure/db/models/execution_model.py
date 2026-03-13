@@ -24,7 +24,9 @@ class ExecutionModel(Base, TimestampMixin):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    metadata_: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    metadata_: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict
+    )
 
     steps: Mapped[list["ExecutionStepModel"]] = relationship(
         "ExecutionStepModel",

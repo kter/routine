@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
+from routineops.domain.entities.execution import Execution
 from routineops.interface.api.deps import RequestContextDep, get_execution_usecases
 from routineops.interface.schemas.execution import (
     AbandonExecutionRequest,
@@ -20,7 +21,7 @@ router = APIRouter()
 ExecUsecasesDep = Annotated[ExecutionUsecases, Depends(get_execution_usecases)]
 
 
-def _map_execution(execution, task_title: str | None = None) -> ExecutionResponse:
+def _map_execution(execution: Execution, task_title: str | None = None) -> ExecutionResponse:
     return ExecutionResponse(
         id=execution.id,
         tenant_id=execution.tenant_id,

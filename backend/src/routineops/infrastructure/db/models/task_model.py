@@ -21,8 +21,10 @@ class TaskModel(Base, TimestampMixin):
     timezone: Mapped[str] = mapped_column(Text, nullable=False, default="Asia/Tokyo")
     estimated_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
-    metadata_: Mapped[dict] = mapped_column("metadata", JSON, nullable=False, default=dict)
+    tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    metadata_: Mapped[dict[str, object]] = mapped_column(
+        "metadata", JSON, nullable=False, default=dict
+    )
     created_by: Mapped[str] = mapped_column(Text, nullable=False)
 
     steps: Mapped[list["StepModel"]] = relationship(

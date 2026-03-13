@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from routineops.domain.exceptions import ValidationError
@@ -26,7 +27,7 @@ class ExecutionStep:
 
     @property
     def evidence_type(self) -> EvidenceType:
-        return EvidenceType(self.step_snapshot.get("evidence_type", "none"))
+        return EvidenceType(cast(str, self.step_snapshot.get("evidence_type", "none")))
 
     @property
     def is_required(self) -> bool:

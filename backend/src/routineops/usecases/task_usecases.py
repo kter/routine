@@ -116,7 +116,7 @@ class TaskUsecases:
                     position=int(str(step_data.get("position", 1))),
                     title=str(step_data["title"]),
                     instruction=str(step_data.get("instruction", "")),
-                    evidence_type=EvidenceType(step_data.get("evidence_type", "none")),
+                    evidence_type=EvidenceType(str(step_data.get("evidence_type", "none"))),
                     is_required=bool(step_data.get("is_required", True)),
                     created_at=now,
                     updated_at=now,

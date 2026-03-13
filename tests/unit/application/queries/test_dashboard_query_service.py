@@ -73,6 +73,11 @@ def test_query_service_classifies_today_and_overdue_using_task_timezone() -> Non
         item.scheduled_for for item in result.overdue
     }
     assert datetime(2026, 3, 11, 1, 0, tzinfo=UTC) in {item.scheduled_for for item in result.today}
+    exec_repo.list.assert_called_once_with(
+        TENANT_ID,
+        scheduled_from=datetime(2026, 3, 3, 23, 0, tzinfo=UTC),
+        scheduled_to=datetime(2026, 3, 18, 23, 0, tzinfo=UTC),
+    )
 
 
 def test_query_service_attaches_matching_execution_metadata() -> None:
@@ -114,3 +119,20 @@ def test_query_service_caps_upcoming_items_to_twenty() -> None:
     )
 
     assert len(result.upcoming) == 20
+
+
+def test_query_service_reads_only_execution_window() -> None:
+    task_repo = MagicMock()
+    exec_repo = MagicMock()
+    task_repo.list.return_value = [make_task(timezone="UTC")]
+    exec_repo.list.return_value = []
+    service = DashboardQueryService(task_repo, exec_repo)
+    now = datetime(2026, 3, 15, 12, 30, tzinfo=UTC)
+
+    service.get_dashboard(TENANT_ID, now_utc=now)
+
+    exec_repo.list.assert_called_once_with(
+        TENANT_ID,
+        scheduled_from=datetime(2026, 3, 8, 12, 30, tzinfo=UTC),
+        scheduled_to=datetime(2026, 3, 23, 12, 30, tzinfo=UTC),
+    )
