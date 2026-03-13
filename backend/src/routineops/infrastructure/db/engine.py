@@ -4,14 +4,22 @@ Falls back to SQLite for local/test environments.
 """
 
 import logging
-import os
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 
+from routineops.config.settings import DatabaseSettings, get_database_settings
+
 logger = logging.getLogger(__name__)
 
 _engine: Engine | None = None
+
+
+def reset_engine() -> None:
+    global _engine
+    if _engine is not None and hasattr(_engine, "dispose"):
+        _engine.dispose()
+    _engine = None
 
 
 def _get_dsql_token(hostname: str, region: str) -> str:
@@ -49,34 +57,38 @@ def create_sqlite_engine(path: str = ":memory:") -> Engine:
     )
 
 
-def get_engine() -> Engine:
+def get_engine(settings: DatabaseSettings | None = None) -> Engine:
     global _engine
     if _engine is not None:
         return _engine
 
-    db_type = os.getenv("DB_TYPE", "dsql")
+    settings = settings or get_database_settings()
+    db_type = settings.db_type
 
     if db_type == "sqlite":
-        db_path = os.getenv("SQLITE_PATH", ":memory:")
-        logger.info("Using SQLite engine at %s", db_path)
-        _engine = create_sqlite_engine(db_path)
+        logger.info("Using SQLite engine at %s", settings.sqlite_path)
+        _engine = create_sqlite_engine(settings.sqlite_path)
     else:
-        cluster_endpoint = os.environ["DB_CLUSTER_ENDPOINT"]
-        db_name = os.getenv("DB_NAME", "postgres")
-        region = os.getenv("AWS_REGION", "ap-northeast-1")
-        logger.info("Using Aurora DSQL engine at %s", cluster_endpoint)
-        _engine = create_dsql_engine(cluster_endpoint, db_name, region)
+        if not settings.db_cluster_endpoint:
+            raise ValueError("DB_CLUSTER_ENDPOINT is required when DB_TYPE is not sqlite")
+        logger.info("Using Aurora DSQL engine at %s", settings.db_cluster_endpoint)
+        _engine = create_dsql_engine(
+            settings.db_cluster_endpoint,
+            settings.db_name,
+            settings.aws_region,
+        )
 
     return _engine
 
 
-def init_db() -> None:
-    if os.getenv("DB_TYPE", "dsql") != "sqlite":
+def init_db(settings: DatabaseSettings | None = None) -> None:
+    settings = settings or get_database_settings()
+    if settings.db_type != "sqlite":
         logger.info("Skipping create_all for non-SQLite DB; use Alembic migrations instead")
         return
 
     from routineops.infrastructure.db import models as _models  # noqa: F401
     from routineops.infrastructure.db.base import Base
 
-    engine = get_engine()
+    engine = get_engine(settings)
     Base.metadata.create_all(engine)

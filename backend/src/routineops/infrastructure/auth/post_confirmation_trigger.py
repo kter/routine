@@ -5,12 +5,12 @@ Creates a tenant in the DB and sets the custom:tenant_id attribute on the user.
 
 import json
 import logging
-import os
 import uuid
 
 import boto3
 import psycopg2
 
+from routineops.config.settings import get_post_confirmation_settings
 from routineops.infrastructure.monitoring.sentry import init_sentry
 
 logger = logging.getLogger(__name__)
@@ -30,13 +30,13 @@ def _get_dsql_token(hostname: str, region: str) -> str:
 
 def _get_db_connection(cluster_endpoint: str, region: str) -> psycopg2.extensions.connection:
     token = _get_dsql_token(cluster_endpoint, region)
-    db_name = os.environ.get("DB_NAME", "postgres")
+    settings = get_post_confirmation_settings()
     conn = psycopg2.connect(
         host=cluster_endpoint,
         port=5432,
         user="admin",
         password=token,
-        dbname=db_name,
+        dbname=settings.db_name,
         sslmode="require",
     )
     return conn
@@ -52,8 +52,9 @@ def handler(event: dict, context: object) -> dict:
     user_pool_id: str = event.get("userPoolId", "")
     username: str = event.get("userName", "")
 
-    cluster_endpoint = os.environ["DB_CLUSTER_ENDPOINT"]
-    region = os.environ.get("AWS_REGION", "ap-northeast-1")
+    settings = get_post_confirmation_settings()
+    if not settings.db_cluster_endpoint:
+        raise ValueError("DB_CLUSTER_ENDPOINT is not configured")
 
     tenant_id = str(uuid.uuid4())
     # Use email prefix as name, UUID as slug (unique, URL-safe)
@@ -62,7 +63,7 @@ def handler(event: dict, context: object) -> dict:
 
     logger.info("Creating tenant for user %s, email %s", username, email)
 
-    conn = _get_db_connection(cluster_endpoint, region)
+    conn = _get_db_connection(settings.db_cluster_endpoint, settings.aws_region)
     try:
         with conn:
             with conn.cursor() as cur:
@@ -77,7 +78,7 @@ def handler(event: dict, context: object) -> dict:
     finally:
         conn.close()
 
-    cognito = boto3.client("cognito-idp", region_name=region)
+    cognito = boto3.client("cognito-idp", region_name=settings.aws_region)
     cognito.admin_update_user_attributes(
         UserPoolId=user_pool_id,
         Username=username,

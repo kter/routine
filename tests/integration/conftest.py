@@ -1,6 +1,7 @@
 """Integration test fixtures: TestClient + SQLite in-memory DB."""
 
 from collections.abc import Generator
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -21,6 +22,8 @@ from routineops.main import app
 
 TEST_TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 TEST_USER_SUB = "integration-test-user"
+ALT_TEST_TENANT_ID = UUID("00000000-0000-0000-0000-000000000002")
+ALT_TEST_USER_SUB = "integration-test-user-alt"
 
 
 @pytest.fixture(scope="function")
@@ -56,23 +59,44 @@ def mock_storage() -> MagicMock:
 
 
 @pytest.fixture(scope="function")
-def client(db_session: Session, mock_storage) -> Generator[TestClient, None, None]:
-    """TestClient with overridden dependencies."""
+def tenant_client_factory(
+    db_session: Session,
+    mock_storage: MagicMock,
+) -> Generator:
+    """Build TestClient instances bound to a specific tenant."""
 
-    def override_get_db():
-        yield db_session
+    @contextmanager
+    def factory(
+        tenant_id: UUID = TEST_TENANT_ID,
+        user_sub: str = TEST_USER_SUB,
+    ) -> Generator[TestClient, None, None]:
+        def override_get_db():
+            yield db_session
 
-    def override_get_tenant():
-        return TEST_TENANT_ID, TEST_USER_SUB
+        def override_get_tenant():
+            return tenant_id, user_sub
 
-    def override_get_storage():
-        return mock_storage
+        def override_get_storage():
+            return mock_storage
 
-    app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_current_tenant] = override_get_tenant
-    app.dependency_overrides[get_storage] = override_get_storage
+        app.dependency_overrides[get_db] = override_get_db
+        app.dependency_overrides[get_current_tenant] = override_get_tenant
+        app.dependency_overrides[get_storage] = override_get_storage
 
-    with TestClient(app) as c:
-        yield c
+        with TestClient(app) as client:
+            yield client
 
-    app.dependency_overrides.clear()
+        app.dependency_overrides.clear()
+
+    try:
+        yield factory
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def client(tenant_client_factory) -> Generator[TestClient, None, None]:
+    """Default TestClient bound to the primary test tenant."""
+
+    with tenant_client_factory() as default_client:
+        yield default_client

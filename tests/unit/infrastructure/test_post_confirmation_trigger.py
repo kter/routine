@@ -297,7 +297,7 @@ class TestErrorHandling:
         with patch.dict(os.environ, {}, clear=False):
             saved = os.environ.pop("DB_CLUSTER_ENDPOINT", None)
             try:
-                with pytest.raises(KeyError):
+                with pytest.raises(ValueError, match="DB_CLUSTER_ENDPOINT is not configured"):
                     handler(event, context=None)
             finally:
                 if saved is not None:

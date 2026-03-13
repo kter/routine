@@ -130,9 +130,16 @@ class DashboardUsecases:
         # Find execution within 1 hour window of the scheduled time
         window = timedelta(hours=1)
         for e in executions:
+            execution_scheduled_for = e.scheduled_for
+            if execution_scheduled_for is None:
+                continue
+            if execution_scheduled_for.tzinfo is None:
+                execution_scheduled_for = execution_scheduled_for.replace(tzinfo=UTC)
+            if scheduled_for.tzinfo is None:
+                scheduled_for = scheduled_for.replace(tzinfo=UTC)
             if (
-                e.scheduled_for
-                and abs((e.scheduled_for - scheduled_for).total_seconds()) < window.total_seconds()
+                abs((execution_scheduled_for - scheduled_for).total_seconds())
+                < window.total_seconds()
             ):
                 return e
         return None

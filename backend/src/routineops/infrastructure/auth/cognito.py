@@ -4,17 +4,21 @@ Caches the JWKS in memory to avoid redundant HTTP calls.
 """
 
 import json
-import os
 import urllib.request
 from functools import lru_cache
 
 from jose import JWTError, jwk, jwt
 from jose.utils import base64url_decode
 
+from routineops.config.settings import get_api_settings
+
 
 @lru_cache(maxsize=1)
 def _get_jwks() -> dict:
-    url = os.environ["COGNITO_JWKS_URL"]
+    settings = get_api_settings()
+    if not settings.cognito_jwks_url:
+        raise ValueError("COGNITO_JWKS_URL is not configured")
+    url = settings.cognito_jwks_url
     with urllib.request.urlopen(url, timeout=5) as response:  # noqa: S310
         return json.loads(response.read())  # type: ignore[no-any-return]
 
@@ -45,7 +49,10 @@ def verify_token(token: str) -> dict[str, object]:
         claims: dict[str, object] = jwt.get_unverified_claims(token)
 
         # Verify audience and issuer
-        expected_client_id = os.environ["COGNITO_CLIENT_ID"]
+        settings = get_api_settings()
+        if not settings.cognito_client_id:
+            raise ValueError("COGNITO_CLIENT_ID is not configured")
+        expected_client_id = settings.cognito_client_id
         if (
             claims.get("client_id") != expected_client_id
             and claims.get("aud") != expected_client_id
