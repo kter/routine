@@ -19,26 +19,25 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         super().__init__(db, tenant_id)
 
     def list(self, tenant_id: UUID, active_only: bool = False) -> list[Task]:
-        q = self._db.query(TaskModel).filter(TaskModel.tenant_id == tenant_id)
+        self._assert_tenant(tenant_id)
+        q = self._query(TaskModel)
         if active_only:
             q = q.filter(TaskModel.is_active.is_(True))
         return [self._to_domain(m) for m in q.order_by(TaskModel.created_at.desc()).all()]
 
     def get(self, tenant_id: UUID, task_id: UUID) -> Task | None:
-        m = (
-            self._db.query(TaskModel)
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         return self._to_domain(m) if m else None
 
     def get_with_steps(self, tenant_id: UUID, task_id: UUID) -> Task | None:
         from sqlalchemy.orm import joinedload
 
+        self._assert_tenant(tenant_id)
         m = (
-            self._db.query(TaskModel)
+            self._query(TaskModel)
             .options(joinedload(TaskModel.steps))
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
+            .filter(TaskModel.id == task_id)
             .first()
         )
         if m is None:
@@ -61,9 +60,9 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         from sqlalchemy.orm import joinedload
 
         m = (
-            self._db.query(TaskModel)
+            self._query(TaskModel)
             .options(joinedload(TaskModel.steps))
-            .filter(TaskModel.id == task.id, TaskModel.tenant_id == task.tenant_id)
+            .filter(TaskModel.id == task.id)
             .first()
         )
         if m is None:
@@ -77,11 +76,8 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         return updated_task
 
     def delete(self, tenant_id: UUID, task_id: UUID) -> None:
-        m = (
-            self._db.query(TaskModel)
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         if m:
             self._db.delete(m)
             self._db.commit()

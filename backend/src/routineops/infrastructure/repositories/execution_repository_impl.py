@@ -23,7 +23,8 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
     ) -> list[Execution]:
-        q = self._db.query(ExecutionModel).filter(ExecutionModel.tenant_id == tenant_id)
+        self._assert_tenant(tenant_id)
+        q = self._query(ExecutionModel)
         if task_id is not None:
             q = q.filter(ExecutionModel.task_id == task_id)
         if status is not None:
@@ -31,26 +32,18 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return [self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()]
 
     def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
-        m = (
-            self._db.query(ExecutionModel)
-            .filter(
-                ExecutionModel.tenant_id == tenant_id,
-                ExecutionModel.id == execution_id,
-            )
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(ExecutionModel).filter(ExecutionModel.id == execution_id).first()
         return self._to_domain(m) if m else None
 
     def get_with_steps(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
         from sqlalchemy.orm import joinedload
 
+        self._assert_tenant(tenant_id)
         m = (
-            self._db.query(ExecutionModel)
+            self._query(ExecutionModel)
             .options(joinedload(ExecutionModel.steps))
-            .filter(
-                ExecutionModel.tenant_id == tenant_id,
-                ExecutionModel.id == execution_id,
-            )
+            .filter(ExecutionModel.id == execution_id)
             .first()
         )
         if m is None:
@@ -81,14 +74,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return self._to_domain(m)
 
     def update(self, execution: Execution) -> Execution:
-        m = (
-            self._db.query(ExecutionModel)
-            .filter(
-                ExecutionModel.id == execution.id,
-                ExecutionModel.tenant_id == execution.tenant_id,
-            )
-            .first()
-        )
+        m = self._query(ExecutionModel).filter(ExecutionModel.id == execution.id).first()
         if m is None:
             raise ValueError(f"Execution {execution.id} not found")
         m.status = execution.status.value
@@ -123,7 +109,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return self._step_to_domain(m)
 
     def update_step(self, step: ExecutionStep) -> ExecutionStep:
-        m = self._db.query(ExecutionStepModel).filter(ExecutionStepModel.id == step.id).first()
+        m = self._query(ExecutionStepModel).filter(ExecutionStepModel.id == step.id).first()
         if m is None:
             raise ValueError(f"ExecutionStep {step.id} not found")
         m.status = step.status.value
