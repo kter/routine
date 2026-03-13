@@ -11,8 +11,7 @@ DashboardUsecasesDep = Annotated[DashboardUsecases, Depends(get_dashboard_usecas
 
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard(context: RequestContextDep, usecases: DashboardUsecasesDep) -> DashboardResponse:
-    _ = context
+def get_dashboard(_context: RequestContextDep, usecases: DashboardUsecasesDep) -> DashboardResponse:
     data = usecases.get_dashboard()
     return DashboardResponse(
         today=[

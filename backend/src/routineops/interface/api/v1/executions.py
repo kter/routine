@@ -1,9 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
-from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.interface.api.deps import RequestContextDep, get_execution_usecases
 from routineops.interface.schemas.execution import (
     AbandonExecutionRequest,
@@ -55,43 +54,32 @@ def _map_execution(execution, task_title: str | None = None) -> ExecutionRespons
 
 @router.get("", response_model=list[ExecutionResponse])
 def list_executions(
-    context: RequestContextDep, usecases: ExecUsecasesDep
+    _context: RequestContextDep, usecases: ExecUsecasesDep
 ) -> list[ExecutionResponse]:
-    _ = context
     return [_map_execution(e) for e in usecases.list_executions()]
 
 
 @router.get("/{execution_id}", response_model=ExecutionResponse)
 def get_execution(
     execution_id: UUID,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    _ = context
-    try:
-        return _map_execution(usecases.get_execution(execution_id))
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    return _map_execution(usecases.get_execution(execution_id))
 
 
 @router.post("", response_model=ExecutionResponse, status_code=status.HTTP_201_CREATED)
 def start_execution(
     body: StartExecutionRequest,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    _ = context
-    try:
-        execution = usecases.start_execution(
-            task_id=body.task_id,
-            scheduled_for=body.scheduled_for,
-            notes=body.notes,
-        )
-        return _map_execution(execution)
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+    execution = usecases.start_execution(
+        task_id=body.task_id,
+        scheduled_for=body.scheduled_for,
+        notes=body.notes,
+    )
+    return _map_execution(execution)
 
 
 @router.patch("/{execution_id}/steps/{step_id}/complete", response_model=ExecutionStepResponse)
@@ -99,96 +87,72 @@ def complete_step(
     execution_id: UUID,
     step_id: UUID,
     body: CompleteStepRequest,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionStepResponse:
-    _ = context
-    try:
-        step = usecases.complete_step(
-            execution_id=execution_id,
-            step_id=step_id,
-            evidence_text=body.evidence_text,
-            evidence_image_key=body.evidence_image_key,
-            notes=body.notes,
-        )
-        return ExecutionStepResponse(
-            id=step.id,
-            execution_id=step.execution_id,
-            step_id=step.step_id,
-            position=step.position,
-            step_snapshot=step.step_snapshot,
-            status=step.status.value,
-            evidence_text=step.evidence_text,
-            evidence_image_key=step.evidence_image_key,
-            completed_at=step.completed_at,
-            completed_by=step.completed_by,
-            notes=step.notes,
-        )
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+    step = usecases.complete_step(
+        execution_id=execution_id,
+        step_id=step_id,
+        evidence_text=body.evidence_text,
+        evidence_image_key=body.evidence_image_key,
+        notes=body.notes,
+    )
+    return ExecutionStepResponse(
+        id=step.id,
+        execution_id=step.execution_id,
+        step_id=step.step_id,
+        position=step.position,
+        step_snapshot=step.step_snapshot,
+        status=step.status.value,
+        evidence_text=step.evidence_text,
+        evidence_image_key=step.evidence_image_key,
+        completed_at=step.completed_at,
+        completed_by=step.completed_by,
+        notes=step.notes,
+    )
 
 
 @router.patch("/{execution_id}/steps/{step_id}/skip", response_model=ExecutionStepResponse)
 def skip_step(
     execution_id: UUID,
     step_id: UUID,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionStepResponse:
-    _ = context
-    try:
-        step = usecases.skip_step(execution_id, step_id)
-        return ExecutionStepResponse(
-            id=step.id,
-            execution_id=step.execution_id,
-            step_id=step.step_id,
-            position=step.position,
-            step_snapshot=step.step_snapshot,
-            status=step.status.value,
-            evidence_text=step.evidence_text,
-            evidence_image_key=step.evidence_image_key,
-            completed_at=step.completed_at,
-            completed_by=step.completed_by,
-            notes=step.notes,
-        )
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+    step = usecases.skip_step(execution_id, step_id)
+    return ExecutionStepResponse(
+        id=step.id,
+        execution_id=step.execution_id,
+        step_id=step.step_id,
+        position=step.position,
+        step_snapshot=step.step_snapshot,
+        status=step.status.value,
+        evidence_text=step.evidence_text,
+        evidence_image_key=step.evidence_image_key,
+        completed_at=step.completed_at,
+        completed_by=step.completed_by,
+        notes=step.notes,
+    )
 
 
 @router.patch("/{execution_id}/complete", response_model=ExecutionResponse)
 def complete_execution(
     execution_id: UUID,
     body: CompleteExecutionRequest,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    _ = context
-    try:
-        return _map_execution(usecases.complete_execution(execution_id, notes=body.notes))
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+    return _map_execution(usecases.complete_execution(execution_id, notes=body.notes))
 
 
 @router.patch("/{execution_id}/abandon", response_model=ExecutionResponse)
 def abandon_execution(
     execution_id: UUID,
     body: AbandonExecutionRequest,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> ExecutionResponse:
-    _ = context
-    try:
-        return _map_execution(usecases.abandon_execution(execution_id, notes=body.notes))
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+    return _map_execution(usecases.abandon_execution(execution_id, notes=body.notes))
 
 
 @router.post(
@@ -199,12 +163,8 @@ def get_evidence_upload_url(
     execution_id: UUID,
     step_id: UUID,
     body: EvidenceUploadUrlRequest,
-    context: RequestContextDep,
+    _context: RequestContextDep,
     usecases: ExecUsecasesDep,
 ) -> EvidenceUploadUrlResponse:
-    _ = context
-    try:
-        upload_url, key = usecases.get_evidence_upload_url(execution_id, step_id, body.content_type)
-        return EvidenceUploadUrlResponse(upload_url=upload_url, key=key)
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    upload_url, key = usecases.get_evidence_upload_url(execution_id, step_id, body.content_type)
+    return EvidenceUploadUrlResponse(upload_url=upload_url, key=key)
