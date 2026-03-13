@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -8,6 +7,7 @@ from sqlalchemy.orm import Session
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
+from routineops.infrastructure.db.dsql_compat import decode_json_array, decode_json_object
 from routineops.infrastructure.db.models.step_model import StepModel
 from routineops.infrastructure.db.models.task_model import TaskModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
@@ -133,12 +133,6 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
 
     @staticmethod
     def _to_domain(m: TaskModel) -> Task:
-        tags = m.tags
-        if isinstance(tags, str):
-            tags = json.loads(tags)
-        metadata = m.metadata_
-        if isinstance(metadata, str):
-            metadata = json.loads(metadata)
         return Task(
             id=m.id,
             tenant_id=m.tenant_id,
@@ -148,8 +142,8 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
             timezone=m.timezone,
             estimated_minutes=m.estimated_minutes,
             is_active=m.is_active,
-            tags=list(tags or []),
-            metadata=dict(metadata or {}),
+            tags=decode_json_array(m.tags),
+            metadata=decode_json_object(m.metadata_),
             created_by=m.created_by,
             created_at=m.created_at,
             updated_at=m.updated_at,

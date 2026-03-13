@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.value_objects.execution_status import ExecutionStatus, StepStatus
+from routineops.infrastructure.db.dsql_compat import decode_json_object
 from routineops.infrastructure.db.models.execution_model import ExecutionModel
 from routineops.infrastructure.db.models.execution_step_model import ExecutionStepModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
@@ -139,10 +139,6 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
 
     @staticmethod
     def _to_domain(m: ExecutionModel) -> Execution:
-        # Aurora DSQL returns TEXT columns as strings; parse JSON if needed
-        metadata = m.metadata_
-        if isinstance(metadata, str):
-            metadata = json.loads(metadata)
         return Execution(
             id=m.id,
             tenant_id=m.tenant_id,
@@ -154,24 +150,20 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
             completed_at=m.completed_at,
             duration_seconds=m.duration_seconds,
             notes=m.notes,
-            metadata=dict(metadata or {}),
+            metadata=decode_json_object(m.metadata_),
             created_at=m.created_at,
             updated_at=m.updated_at,
         )
 
     @staticmethod
     def _step_to_domain(m: ExecutionStepModel) -> ExecutionStep:
-        # Aurora DSQL returns TEXT columns as strings; parse JSON if needed
-        step_snapshot = m.step_snapshot
-        if isinstance(step_snapshot, str):
-            step_snapshot = json.loads(step_snapshot)
         return ExecutionStep(
             id=m.id,
             tenant_id=m.tenant_id,
             execution_id=m.execution_id,
             step_id=m.step_id,
             position=m.position,
-            step_snapshot=dict(step_snapshot or {}),
+            step_snapshot=decode_json_object(m.step_snapshot),
             status=StepStatus(m.status),
             evidence_text=m.evidence_text,
             evidence_image_key=m.evidence_image_key,
