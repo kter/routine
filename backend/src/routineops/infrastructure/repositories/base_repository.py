@@ -1,8 +1,9 @@
 """Base repository that enforces tenant_id scoping on all queries."""
 
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 
 class BaseRepository:
@@ -10,6 +11,12 @@ class BaseRepository:
         self._db = db
         self._tenant_id = tenant_id
 
-    def _tenant_filter(self, model_class: type, query: object) -> object:
-        """Apply tenant_id filter to a query."""
-        return query.filter(model_class.tenant_id == self._tenant_id)  # type: ignore[attr-defined]
+    def _assert_tenant(self, tenant_id: UUID) -> None:
+        if tenant_id != self._tenant_id:
+            raise ValueError(
+                f"Repository tenant mismatch: expected {self._tenant_id}, got {tenant_id}"
+            )
+
+    def _query(self, model_class: type[Any]) -> Query:
+        """Build a tenant-scoped query for the given SQLAlchemy model."""
+        return self._db.query(model_class).filter(model_class.tenant_id == self._tenant_id)

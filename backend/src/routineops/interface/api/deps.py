@@ -1,6 +1,5 @@
 """FastAPI dependency injection utilities."""
 
-import os
 from typing import Annotated
 from uuid import UUID
 
@@ -8,13 +7,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from routineops.application.container import (
+    build_dashboard_usecases,
+    build_execution_usecases,
+    build_storage,
+    build_task_usecases,
+)
+from routineops.config.settings import get_api_settings
 from routineops.infrastructure.db.session import get_db
-from routineops.infrastructure.repositories.execution_repository_impl import (
-    ExecutionRepositoryImpl,
-)
-from routineops.infrastructure.repositories.task_repository_impl import (
-    TaskRepositoryImpl,
-)
 from routineops.infrastructure.storage.s3_storage import S3StorageImpl
 from routineops.usecases.dashboard_usecases import DashboardUsecases
 from routineops.usecases.execution_usecases import ExecutionUsecases
@@ -30,13 +30,13 @@ def get_current_tenant(
     Verify JWT and extract (tenant_id, user_sub).
     Returns (tenant_id, sub) tuple.
     """
-    token = credentials.credentials
+    settings = get_api_settings()
 
     # Allow bypass in test mode
-    if os.getenv("TEST_MODE") == "true":
-        tenant_id = UUID(os.getenv("TEST_TENANT_ID", "00000000-0000-0000-0000-000000000001"))
-        sub = os.getenv("TEST_USER_SUB", "test-user")
-        return tenant_id, sub
+    if settings.test_mode:
+        return settings.test_tenant_id, settings.test_user_sub
+
+    token = credentials.credentials
 
     try:
         from routineops.infrastructure.auth.cognito import verify_token
@@ -61,36 +61,25 @@ TenantDep = Annotated[tuple[UUID, str], Depends(get_current_tenant)]
 DbDep = Annotated[Session, Depends(get_db)]
 
 
-def get_task_repo(tenant: TenantDep, db: DbDep) -> TaskRepositoryImpl:
-    tenant_id, _ = tenant
-    return TaskRepositoryImpl(db, tenant_id)
-
-
-def get_exec_repo(tenant: TenantDep, db: DbDep) -> ExecutionRepositoryImpl:
-    tenant_id, _ = tenant
-    return ExecutionRepositoryImpl(db, tenant_id)
-
-
 def get_storage() -> S3StorageImpl:
-    return S3StorageImpl()
+    settings = get_api_settings()
+    return build_storage(bucket_name=settings.evidence_bucket_name)
 
 
-def get_task_usecases(
-    task_repo: Annotated[TaskRepositoryImpl, Depends(get_task_repo)],
-) -> TaskUsecases:
-    return TaskUsecases(task_repo)
+def get_task_usecases(tenant: TenantDep, db: DbDep) -> TaskUsecases:
+    tenant_id, _ = tenant
+    return build_task_usecases(db=db, tenant_id=tenant_id)
 
 
 def get_execution_usecases(
-    exec_repo: Annotated[ExecutionRepositoryImpl, Depends(get_exec_repo)],
-    task_repo: Annotated[TaskRepositoryImpl, Depends(get_task_repo)],
+    tenant: TenantDep,
+    db: DbDep,
     storage: Annotated[S3StorageImpl, Depends(get_storage)],
 ) -> ExecutionUsecases:
-    return ExecutionUsecases(exec_repo, task_repo, storage)
+    tenant_id, _ = tenant
+    return build_execution_usecases(db=db, tenant_id=tenant_id, storage=storage)
 
 
-def get_dashboard_usecases(
-    task_repo: Annotated[TaskRepositoryImpl, Depends(get_task_repo)],
-    exec_repo: Annotated[ExecutionRepositoryImpl, Depends(get_exec_repo)],
-) -> DashboardUsecases:
-    return DashboardUsecases(task_repo, exec_repo)
+def get_dashboard_usecases(tenant: TenantDep, db: DbDep) -> DashboardUsecases:
+    tenant_id, _ = tenant
+    return build_dashboard_usecases(db=db, tenant_id=tenant_id)

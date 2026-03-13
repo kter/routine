@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.value_objects.execution_status import ExecutionStatus, StepStatus
+from routineops.infrastructure.db.dsql_compat import decode_json_object
 from routineops.infrastructure.db.models.execution_model import ExecutionModel
 from routineops.infrastructure.db.models.execution_step_model import ExecutionStepModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
@@ -23,7 +23,8 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
     ) -> list[Execution]:
-        q = self._db.query(ExecutionModel).filter(ExecutionModel.tenant_id == tenant_id)
+        self._assert_tenant(tenant_id)
+        q = self._query(ExecutionModel)
         if task_id is not None:
             q = q.filter(ExecutionModel.task_id == task_id)
         if status is not None:
@@ -31,26 +32,18 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return [self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()]
 
     def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
-        m = (
-            self._db.query(ExecutionModel)
-            .filter(
-                ExecutionModel.tenant_id == tenant_id,
-                ExecutionModel.id == execution_id,
-            )
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(ExecutionModel).filter(ExecutionModel.id == execution_id).first()
         return self._to_domain(m) if m else None
 
     def get_with_steps(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
         from sqlalchemy.orm import joinedload
 
+        self._assert_tenant(tenant_id)
         m = (
-            self._db.query(ExecutionModel)
+            self._query(ExecutionModel)
             .options(joinedload(ExecutionModel.steps))
-            .filter(
-                ExecutionModel.tenant_id == tenant_id,
-                ExecutionModel.id == execution_id,
-            )
+            .filter(ExecutionModel.id == execution_id)
             .first()
         )
         if m is None:
@@ -81,14 +74,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return self._to_domain(m)
 
     def update(self, execution: Execution) -> Execution:
-        m = (
-            self._db.query(ExecutionModel)
-            .filter(
-                ExecutionModel.id == execution.id,
-                ExecutionModel.tenant_id == execution.tenant_id,
-            )
-            .first()
-        )
+        m = self._query(ExecutionModel).filter(ExecutionModel.id == execution.id).first()
         if m is None:
             raise ValueError(f"Execution {execution.id} not found")
         m.status = execution.status.value
@@ -123,7 +109,7 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
         return self._step_to_domain(m)
 
     def update_step(self, step: ExecutionStep) -> ExecutionStep:
-        m = self._db.query(ExecutionStepModel).filter(ExecutionStepModel.id == step.id).first()
+        m = self._query(ExecutionStepModel).filter(ExecutionStepModel.id == step.id).first()
         if m is None:
             raise ValueError(f"ExecutionStep {step.id} not found")
         m.status = step.status.value
@@ -139,10 +125,6 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
 
     @staticmethod
     def _to_domain(m: ExecutionModel) -> Execution:
-        # Aurora DSQL returns TEXT columns as strings; parse JSON if needed
-        metadata = m.metadata_
-        if isinstance(metadata, str):
-            metadata = json.loads(metadata)
         return Execution(
             id=m.id,
             tenant_id=m.tenant_id,
@@ -154,24 +136,20 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
             completed_at=m.completed_at,
             duration_seconds=m.duration_seconds,
             notes=m.notes,
-            metadata=dict(metadata or {}),
+            metadata=decode_json_object(m.metadata_),
             created_at=m.created_at,
             updated_at=m.updated_at,
         )
 
     @staticmethod
     def _step_to_domain(m: ExecutionStepModel) -> ExecutionStep:
-        # Aurora DSQL returns TEXT columns as strings; parse JSON if needed
-        step_snapshot = m.step_snapshot
-        if isinstance(step_snapshot, str):
-            step_snapshot = json.loads(step_snapshot)
         return ExecutionStep(
             id=m.id,
             tenant_id=m.tenant_id,
             execution_id=m.execution_id,
             step_id=m.step_id,
             position=m.position,
-            step_snapshot=dict(step_snapshot or {}),
+            step_snapshot=decode_json_object(m.step_snapshot),
             status=StepStatus(m.status),
             evidence_text=m.evidence_text,
             evidence_image_key=m.evidence_image_key,

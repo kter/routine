@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -8,6 +7,7 @@ from sqlalchemy.orm import Session
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
+from routineops.infrastructure.db.dsql_compat import decode_json_array, decode_json_object
 from routineops.infrastructure.db.models.step_model import StepModel
 from routineops.infrastructure.db.models.task_model import TaskModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
@@ -19,26 +19,25 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         super().__init__(db, tenant_id)
 
     def list(self, tenant_id: UUID, active_only: bool = False) -> list[Task]:
-        q = self._db.query(TaskModel).filter(TaskModel.tenant_id == tenant_id)
+        self._assert_tenant(tenant_id)
+        q = self._query(TaskModel)
         if active_only:
             q = q.filter(TaskModel.is_active.is_(True))
         return [self._to_domain(m) for m in q.order_by(TaskModel.created_at.desc()).all()]
 
     def get(self, tenant_id: UUID, task_id: UUID) -> Task | None:
-        m = (
-            self._db.query(TaskModel)
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         return self._to_domain(m) if m else None
 
     def get_with_steps(self, tenant_id: UUID, task_id: UUID) -> Task | None:
         from sqlalchemy.orm import joinedload
 
+        self._assert_tenant(tenant_id)
         m = (
-            self._db.query(TaskModel)
+            self._query(TaskModel)
             .options(joinedload(TaskModel.steps))
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
+            .filter(TaskModel.id == task_id)
             .first()
         )
         if m is None:
@@ -61,9 +60,9 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         from sqlalchemy.orm import joinedload
 
         m = (
-            self._db.query(TaskModel)
+            self._query(TaskModel)
             .options(joinedload(TaskModel.steps))
-            .filter(TaskModel.id == task.id, TaskModel.tenant_id == task.tenant_id)
+            .filter(TaskModel.id == task.id)
             .first()
         )
         if m is None:
@@ -77,11 +76,8 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         return updated_task
 
     def delete(self, tenant_id: UUID, task_id: UUID) -> None:
-        m = (
-            self._db.query(TaskModel)
-            .filter(TaskModel.tenant_id == tenant_id, TaskModel.id == task_id)
-            .first()
-        )
+        self._assert_tenant(tenant_id)
+        m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         if m:
             self._db.delete(m)
             self._db.commit()
@@ -133,12 +129,6 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
 
     @staticmethod
     def _to_domain(m: TaskModel) -> Task:
-        tags = m.tags
-        if isinstance(tags, str):
-            tags = json.loads(tags)
-        metadata = m.metadata_
-        if isinstance(metadata, str):
-            metadata = json.loads(metadata)
         return Task(
             id=m.id,
             tenant_id=m.tenant_id,
@@ -148,8 +138,8 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
             timezone=m.timezone,
             estimated_minutes=m.estimated_minutes,
             is_active=m.is_active,
-            tags=list(tags or []),
-            metadata=dict(metadata or {}),
+            tags=decode_json_array(m.tags),
+            metadata=decode_json_object(m.metadata_),
             created_by=m.created_by,
             created_at=m.created_at,
             updated_at=m.updated_at,
