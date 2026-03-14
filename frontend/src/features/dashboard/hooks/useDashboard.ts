@@ -1,15 +1,19 @@
-import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "@/lib/api/dashboard";
-import { useApiResource } from "@/lib/hooks/useApiResource";
+import { getQueryError } from "@/lib/query/queryError";
+import { queryKeys } from "@/lib/query/queryKeys";
 import type { DashboardData } from "../types";
 
 export function useDashboard() {
-  const fetchDashboard = useCallback(() => dashboardApi.get(), []);
-  const { data, isLoading, error, refetch } =
-    useApiResource<DashboardData | null>(fetchDashboard, {
-      initialData: null,
-      errorMessage: "Failed to fetch dashboard",
-    });
+  const query = useQuery<DashboardData>({
+    queryKey: queryKeys.dashboard,
+    queryFn: dashboardApi.get,
+  });
 
-  return { data, isLoading, error, refetch };
+  return {
+    data: query.data ?? null,
+    isLoading: query.isPending,
+    error: getQueryError(query.error, "Failed to fetch dashboard"),
+    refetch: query.refetch,
+  };
 }

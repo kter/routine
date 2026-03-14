@@ -1,33 +1,33 @@
-import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { tasksApi } from "@/lib/api/tasks";
-import { useApiResource } from "@/lib/hooks/useApiResource";
+import { getQueryError } from "@/lib/query/queryError";
+import { queryKeys } from "@/lib/query/queryKeys";
 import type { Task } from "../types";
 
 export function useTasks() {
-  const fetchTasks = useCallback(() => tasksApi.list(), []);
-  const {
-    data: tasks,
-    isLoading,
-    error,
-    refetch,
-  } = useApiResource(fetchTasks, {
-    initialData: [] as Task[],
-    errorMessage: "Failed to fetch tasks",
+  const query = useQuery<Task[]>({
+    queryKey: queryKeys.tasks.all,
+    queryFn: tasksApi.list,
   });
 
-  return { tasks, isLoading, error, refetch };
+  return {
+    tasks: query.data ?? [],
+    isLoading: query.isPending,
+    error: getQueryError(query.error, "Failed to fetch tasks"),
+    refetch: query.refetch,
+  };
 }
 
 export function useTask(id: string) {
-  const fetchTask = useCallback(async () => tasksApi.get(id), [id]);
-  const {
-    data: task,
-    isLoading,
-    error,
-  } = useApiResource<Task | null>(fetchTask, {
-    initialData: null,
-    errorMessage: "Failed to fetch task",
+  const query = useQuery<Task>({
+    queryKey: queryKeys.tasks.detail(id),
+    queryFn: () => tasksApi.get(id),
+    enabled: Boolean(id),
   });
 
-  return { task, isLoading, error };
+  return {
+    task: query.data ?? null,
+    isLoading: query.isPending,
+    error: getQueryError(query.error, "Failed to fetch task"),
+  };
 }
