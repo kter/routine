@@ -10,6 +10,9 @@ pre-commit:
       run: make lint-frontend
     frontend-format:
       run: make format-check-frontend
+    conftest-verify:
+      glob: "infra/policy/*.rego"
+      run: make test-conftest-verify
 
 pre-push:
   commands:
@@ -17,3 +20,6 @@ pre-push:
       run: make test-unit-full
     integration-tests:
       run: make test-integration
+    conftest-plan:
+      glob: "infra/**/*.tf"
+      run: make test-conftest-plan ENV=dev
