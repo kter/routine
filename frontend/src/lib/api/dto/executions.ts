@@ -1,7 +1,7 @@
-export type ExecutionStatus = "in_progress" | "completed" | "abandoned";
-export type StepStatus = "pending" | "completed" | "skipped";
+export type ExecutionStatusDto = "in_progress" | "completed" | "abandoned";
+export type StepStatusDto = "pending" | "completed" | "skipped";
 
-export interface ExecutionStep {
+export interface ExecutionStepDto {
   id: string;
   executionId: string;
   stepId: string;
@@ -12,7 +12,7 @@ export interface ExecutionStep {
     evidenceType: "none" | "text" | "image";
     isRequired: boolean;
   };
-  status: StepStatus;
+  status: StepStatusDto;
   evidenceText?: string;
   evidenceImageKey?: string;
   evidenceImageUrl?: string;
@@ -21,28 +21,28 @@ export interface ExecutionStep {
   notes: string;
 }
 
-export interface Execution {
+export interface ExecutionDto {
   id: string;
   tenantId: string;
   taskId: string;
   taskTitle?: string;
   startedBy: string;
-  status: ExecutionStatus;
+  status: ExecutionStatusDto;
   scheduledFor?: string;
   startedAt: string;
   completedAt?: string;
   durationSeconds?: number;
   notes: string;
-  steps: ExecutionStep[];
+  steps: ExecutionStepDto[];
 }
 
-export interface StartExecutionInput {
+export interface StartExecutionRequestDto {
   taskId: string;
   scheduledFor?: string;
   notes?: string;
 }
 
-export interface CompleteStepInput {
+export interface CompleteStepRequestDto {
   evidenceText?: string;
   evidenceImageKey?: string;
   notes?: string;

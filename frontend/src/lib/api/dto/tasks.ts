@@ -1,4 +1,4 @@
-export interface TaskStep {
+export interface TaskStepDto {
   id: string;
   taskId: string;
   position: number;
@@ -10,7 +10,7 @@ export interface TaskStep {
   updatedAt: string;
 }
 
-export interface Task {
+export interface TaskDto {
   id: string;
   tenantId: string;
   title: string;
@@ -23,10 +23,10 @@ export interface Task {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  steps?: TaskStep[];
+  steps?: TaskStepDto[];
 }
 
-export interface TaskStepInput {
+export interface TaskStepInputDto {
   position: number;
   title: string;
   instruction?: string;
@@ -34,14 +34,14 @@ export interface TaskStepInput {
   isRequired?: boolean;
 }
 
-export interface TaskInput {
+export interface CreateTaskRequestDto {
   title: string;
   description?: string;
   cronExpression: string;
   timezone?: string;
   estimatedMinutes?: number;
   tags?: string[];
-  steps?: TaskStepInput[];
+  steps?: TaskStepInputDto[];
 }
 
-export type TaskUpdateInput = Partial<TaskInput>;
+export type UpdateTaskRequestDto = Partial<CreateTaskRequestDto>;

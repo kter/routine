@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle, Zap } from "lucide-react";
-import { formatDate } from "@/lib/utils";
 import type { DashboardTask } from "../types";
+import { toDashboardTaskViewModel } from "../view-models";
 
 interface OverduePanelProps {
   tasks: DashboardTask[];
@@ -57,53 +57,57 @@ export function OverduePanel({ tasks, onStartExecution }: OverduePanelProps) {
 
       {/* Task rows */}
       <div>
-        {tasks.map((task, i) => (
-          <div
-            key={task.taskId}
-            className="flex items-center justify-between px-4 py-3 transition-colors duration-150"
-            style={{
-              borderTop: i > 0 ? "1px solid hsl(0 30% 12%)" : undefined,
-            }}
-          >
-            <div className="min-w-0 flex-1">
-              <Link
-                to={`/tasks/${task.taskId}`}
-                className="block text-sm font-medium leading-tight hover:underline underline-offset-2 truncate"
-                style={{ color: "hsl(210 20% 82%)" }}
-              >
-                {task.title}
-              </Link>
-              <p
-                className="mt-0.5 font-mono-data text-[11px]"
-                style={{ color: "hsl(0 50% 48%)" }}
-              >
-                {formatDate(task.scheduledFor)}
-              </p>
-            </div>
-            <button
-              onClick={() => onStartExecution(task.taskId)}
-              className="ml-4 flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-all duration-150"
+        {tasks.map((task, i) => {
+          const display = toDashboardTaskViewModel(task);
+
+          return (
+            <div
+              key={display.taskId}
+              className="flex items-center justify-between px-4 py-3 transition-colors duration-150"
               style={{
-                color: "hsl(0 72% 65%)",
-                border: "1px solid hsl(0 50% 25%)",
-                background: "hsl(0 30% 10%)",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.background = "hsl(0 60% 18%)";
-                el.style.borderColor = "hsl(0 50% 35%)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLButtonElement;
-                el.style.background = "hsl(0 30% 10%)";
-                el.style.borderColor = "hsl(0 50% 25%)";
+                borderTop: i > 0 ? "1px solid hsl(0 30% 12%)" : undefined,
               }}
             >
-              <Zap className="h-3 w-3" />
-              今すぐ実行
-            </button>
-          </div>
-        ))}
+              <div className="min-w-0 flex-1">
+                <Link
+                  to={display.taskHref}
+                  className="block text-sm font-medium leading-tight hover:underline underline-offset-2 truncate"
+                  style={{ color: "hsl(210 20% 82%)" }}
+                >
+                  {display.title}
+                </Link>
+                <p
+                  className="mt-0.5 font-mono-data text-[11px]"
+                  style={{ color: "hsl(0 50% 48%)" }}
+                >
+                  {display.scheduledLabel}
+                </p>
+              </div>
+              <button
+                onClick={() => onStartExecution(display.taskId)}
+                className="ml-4 flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-all duration-150"
+                style={{
+                  color: "hsl(0 72% 65%)",
+                  border: "1px solid hsl(0 50% 25%)",
+                  background: "hsl(0 30% 10%)",
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.background = "hsl(0 60% 18%)";
+                  el.style.borderColor = "hsl(0 50% 35%)";
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLButtonElement;
+                  el.style.background = "hsl(0 30% 10%)";
+                  el.style.borderColor = "hsl(0 50% 25%)";
+                }}
+              >
+                <Zap className="h-3 w-3" />
+                今すぐ実行
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

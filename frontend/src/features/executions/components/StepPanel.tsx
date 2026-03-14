@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { EvidenceUpload } from "./EvidenceUpload";
-import type { ExecutionStep, CompleteStepRequest } from "../types";
+import type { CompleteStepInput, ExecutionStep } from "../types";
 
 interface StepPanelProps {
   step: ExecutionStep;
-  onComplete: (req: CompleteStepRequest) => Promise<void>;
+  onComplete: (req: CompleteStepInput) => Promise<void>;
   onSkip: () => Promise<void>;
 }
 

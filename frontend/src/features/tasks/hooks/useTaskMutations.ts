@@ -3,7 +3,7 @@ import { useState } from "react";
 import { normalizeApiError } from "@/lib/api/client";
 import { tasksApi } from "@/lib/api/tasks";
 import { queryKeys } from "@/lib/query/queryKeys";
-import type { CreateTaskRequest, UpdateTaskRequest } from "../types";
+import type { TaskInput, TaskUpdateInput } from "../types";
 
 export function useTaskMutations() {
   const queryClient = useQueryClient();
@@ -19,7 +19,7 @@ export function useTaskMutations() {
     },
   });
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTaskRequest }) =>
+    mutationFn: ({ id, data }: { id: string; data: TaskUpdateInput }) =>
       tasksApi.update(id, data),
     onSuccess: async (task) => {
       queryClient.setQueryData(queryKeys.tasks.detail(task.id), task);
@@ -40,7 +40,7 @@ export function useTaskMutations() {
     },
   });
 
-  const createTask = async (data: CreateTaskRequest) => {
+  const createTask = async (data: TaskInput) => {
     setError(null);
     try {
       return await createMutation.mutateAsync(data);
@@ -51,7 +51,7 @@ export function useTaskMutations() {
     }
   };
 
-  const updateTask = async (id: string, data: UpdateTaskRequest) => {
+  const updateTask = async (id: string, data: TaskUpdateInput) => {
     setError(null);
     try {
       return await updateMutation.mutateAsync({ id, data });

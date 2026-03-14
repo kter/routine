@@ -9,7 +9,7 @@ import { executionsApi } from "@/lib/api/executions";
 import { normalizeApiError } from "@/lib/api/client";
 import { getQueryError } from "@/lib/query/queryError";
 import { queryKeys } from "@/lib/query/queryKeys";
-import type { Execution, CompleteStepRequest } from "../types";
+import type { CompleteStepInput, Execution } from "../types";
 
 export function useExecutions() {
   const query = useQuery<Execution[]>({
@@ -58,13 +58,8 @@ export function useExecution(id: string) {
   });
   const [actionError, setActionError] = useState<Error | null>(null);
   const completeStepMutation = useMutation({
-    mutationFn: ({
-      stepId,
-      req,
-    }: {
-      stepId: string;
-      req: CompleteStepRequest;
-    }) => executionsApi.completeStep(id, stepId, req),
+    mutationFn: ({ stepId, req }: { stepId: string; req: CompleteStepInput }) =>
+      executionsApi.completeStep(id, stepId, req),
   });
   const skipStepMutation = useMutation({
     mutationFn: (stepId: string) => executionsApi.skipStep(id, stepId),
@@ -90,7 +85,7 @@ export function useExecution(id: string) {
     }
   };
 
-  const completeStep = async (stepId: string, req: CompleteStepRequest) => {
+  const completeStep = async (stepId: string, req: CompleteStepInput) => {
     await runAction(() => completeStepMutation.mutateAsync({ stepId, req }));
   };
 
