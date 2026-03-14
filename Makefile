@@ -1,5 +1,6 @@
 .PHONY: dev dev-frontend dev-backend \
-        test test-frontend test-unit test-unit-full test-integration test-e2e smoke-deploy \
+        test test-frontend test-unit test-unit-full test-integration test-e2e \
+        test-conftest test-conftest-verify test-conftest-plan smoke-deploy \
         lint lint-frontend lint-backend lint-backend-fast typecheck-frontend \
         fmt fmt-terraform fmt-backend fmt-frontend \
         format-check-backend format-check-frontend \
@@ -68,6 +69,19 @@ test-e2e:
 	@export E2E_TEST_USER_EMAIL="$(shell grep E2E_TEST_USER_EMAIL $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
 	export E2E_TEST_USER_PASSWORD="$(shell grep E2E_TEST_USER_PASSWORD $(FRONTEND_DIR)/.env.local 2>/dev/null | cut -d= -f2-)" && \
 	npx playwright test --config=playwright.config.ts
+
+## test-conftest-verify: Verify Conftest policy files are syntactically valid (no AWS required)
+test-conftest-verify:
+	mise exec -- conftest verify --policy $(INFRA_DIR)/policy
+
+## test-conftest-plan: Run Conftest policy checks against Terraform plan (ENV=dev|prd)
+## Creates a temporary lambda.zip placeholder if not present, and removes it after the check.
+test-conftest-plan:
+	@echo "Running Conftest plan check for ENV=$(ENV)..."
+	bash scripts/conftest-plan.sh $(ENV)
+
+## test-conftest: Alias for test-conftest-plan (backward compatibility)
+test-conftest: test-conftest-plan
 
 ## smoke-deploy: Run authenticated dashboard smoke test against the deployed frontend (ENV=dev|prd)
 smoke-deploy:
@@ -148,8 +162,10 @@ claude-post-edit:
 		backend/*.py|tests/*.py|.claude/*.py|.claude/*/*.py|.claude/*/*/*.py) \
 			abs_path="$(CURDIR)/$$file"; \
 			cd $(BACKEND_DIR) && uv run ruff check --fix "$$abs_path" && uv run ruff format "$$abs_path" ;; \
-		infra/*.tf|infra/*.tfvars|infra/bootstrap/*.tf|infra/bootstrap/*.tfvars) \
+		infra/*.tf|infra/*.tfvars|infra/bootstrap/*.tf|infra/bootstrap/*.tfvars|infra/modules/*/*.tf|infra/modules/*/*.tfvars) \
 			terraform fmt "$(CURDIR)/$$file" >/dev/null ;; \
+		infra/policy/*.rego) \
+			mise exec -- conftest verify --policy "$(CURDIR)/infra/policy" ;; \
 		*) \
 			exit 0 ;; \
 	esac
