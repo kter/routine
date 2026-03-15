@@ -3,14 +3,15 @@ import { TodayTasksPanel } from "@/features/dashboard/components/TodayTasksPanel
 import { OverduePanel } from "@/features/dashboard/components/OverduePanel";
 import { UpcomingPanel } from "@/features/dashboard/components/UpcomingPanel";
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
-import { executionsApi } from "@/lib/api/executions";
+import { useStartExecution } from "@/features/executions/hooks/useExecution";
 
 export default function DashboardPage() {
   const { data, isLoading, error, refetch } = useDashboard();
+  const { startExecution } = useStartExecution();
   const navigate = useNavigate();
 
   const handleStartExecution = async (taskId: string) => {
-    const execution = await executionsApi.start({ taskId });
+    const execution = await startExecution(taskId);
     navigate(`/executions/${execution.id}`);
   };
 

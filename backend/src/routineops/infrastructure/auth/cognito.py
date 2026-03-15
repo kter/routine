@@ -14,7 +14,7 @@ from routineops.config.settings import get_api_settings
 
 
 @lru_cache(maxsize=1)
-def _get_jwks() -> dict:
+def _get_jwks() -> dict[str, object]:
     settings = get_api_settings()
     if not settings.cognito_jwks_url:
         raise ValueError("COGNITO_JWKS_URL is not configured")
@@ -35,7 +35,13 @@ def verify_token(token: str) -> dict[str, object]:
         kid = headers["kid"]
 
         jwks = _get_jwks()
-        key_data = next((k for k in jwks["keys"] if k["kid"] == kid), None)
+        keys = jwks.get("keys")
+        if not isinstance(keys, list):
+            raise ValueError("JWKS payload is invalid")
+        key_data = next(
+            (k for k in keys if isinstance(k, dict) and k.get("kid") == kid),
+            None,
+        )
         if key_data is None:
             raise ValueError("Public key not found for kid")
 

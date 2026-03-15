@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CronPicker } from "./CronPicker";
 import { StepEditor } from "./StepEditor";
-import type { CreateTaskRequest, CreateStepRequest } from "../types";
+import type { TaskInput, TaskStepInput } from "../types";
 
 const schema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
@@ -19,8 +19,8 @@ type FormValues = z.infer<typeof schema>;
 
 interface TaskFormProps {
   defaultValues?: Partial<FormValues>;
-  defaultSteps?: CreateStepRequest[];
-  onSubmit: (data: CreateTaskRequest) => Promise<void>;
+  defaultSteps?: TaskStepInput[];
+  onSubmit: (data: TaskInput) => Promise<void>;
   submitLabel?: string;
 }
 
@@ -30,7 +30,7 @@ export function TaskForm({
   onSubmit,
   submitLabel = "作成",
 }: TaskFormProps) {
-  const [steps, setSteps] = useState<CreateStepRequest[]>(defaultSteps);
+  const [steps, setSteps] = useState<TaskStepInput[]>(defaultSteps);
   const [cronExpression, setCronExpression] = useState(
     defaultValues?.cronExpression ?? "0 10 * * *",
   );

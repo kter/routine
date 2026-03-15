@@ -35,7 +35,7 @@ class ApiSettings(DatabaseSettings):
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
-class PostConfirmationSettings(DatabaseSettings):
+class TenantProvisioningSettings(DatabaseSettings):
     env: str = Field(default="development", alias="ENV")
 
 
@@ -50,11 +50,18 @@ def get_api_settings() -> ApiSettings:
 
 
 @lru_cache(maxsize=1)
-def get_post_confirmation_settings() -> PostConfirmationSettings:
-    return PostConfirmationSettings()
+def get_tenant_provisioning_settings() -> TenantProvisioningSettings:
+    return TenantProvisioningSettings()
+
+
+PostConfirmationSettings = TenantProvisioningSettings
+
+
+def get_post_confirmation_settings() -> TenantProvisioningSettings:
+    return get_tenant_provisioning_settings()
 
 
 def clear_settings_caches() -> None:
     get_database_settings.cache_clear()
     get_api_settings.cache_clear()
-    get_post_confirmation_settings.cache_clear()
+    get_tenant_provisioning_settings.cache_clear()

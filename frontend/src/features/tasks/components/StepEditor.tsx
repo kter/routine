@@ -1,9 +1,9 @@
 import { Plus, Trash2, GripVertical } from "lucide-react";
-import type { CreateStepRequest } from "../types";
+import type { TaskStepInput } from "../types";
 
 interface StepEditorProps {
-  steps: CreateStepRequest[];
-  onChange: (steps: CreateStepRequest[]) => void;
+  steps: TaskStepInput[];
+  onChange: (steps: TaskStepInput[]) => void;
 }
 
 export function StepEditor({ steps, onChange }: StepEditorProps) {
@@ -22,7 +22,7 @@ export function StepEditor({ steps, onChange }: StepEditorProps) {
 
   const updateStep = (
     index: number,
-    field: keyof CreateStepRequest,
+    field: keyof TaskStepInput,
     value: unknown,
   ) => {
     const updated = steps.map((s, i) =>

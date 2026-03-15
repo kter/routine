@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ExecutionStepResponse(BaseModel):
@@ -9,7 +9,7 @@ class ExecutionStepResponse(BaseModel):
     execution_id: UUID
     step_id: UUID
     position: int
-    step_snapshot: dict
+    step_snapshot: dict[str, object]
     status: str
     evidence_text: str | None
     evidence_image_key: str | None
@@ -33,7 +33,7 @@ class ExecutionResponse(BaseModel):
     completed_at: datetime | None
     duration_seconds: int | None
     notes: str
-    steps: list[ExecutionStepResponse] = []
+    steps: list[ExecutionStepResponse] = Field(default_factory=list)
 
     model_config = {"from_attributes": True}
 

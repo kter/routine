@@ -1,4 +1,4 @@
-export interface Step {
+export interface TaskStep {
   id: string;
   taskId: string;
   position: number;
@@ -23,20 +23,10 @@ export interface Task {
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  steps?: Step[];
+  steps?: TaskStep[];
 }
 
-export interface CreateTaskRequest {
-  title: string;
-  description?: string;
-  cronExpression: string;
-  timezone?: string;
-  estimatedMinutes?: number;
-  tags?: string[];
-  steps?: CreateStepRequest[];
-}
-
-export interface CreateStepRequest {
+export interface TaskStepInput {
   position: number;
   title: string;
   instruction?: string;
@@ -44,4 +34,14 @@ export interface CreateStepRequest {
   isRequired?: boolean;
 }
 
-export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {}
+export interface TaskInput {
+  title: string;
+  description?: string;
+  cronExpression: string;
+  timezone?: string;
+  estimatedMinutes?: number;
+  tags?: string[];
+  steps?: TaskStepInput[];
+}
+
+export type TaskUpdateInput = Partial<TaskInput>;

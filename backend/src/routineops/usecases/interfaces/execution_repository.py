@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from uuid import UUID
 
 from routineops.domain.entities.execution import Execution, ExecutionStep
@@ -14,6 +15,8 @@ class ExecutionRepositoryPort(ABC):
         tenant_id: UUID,
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
+        scheduled_from: datetime | None = None,
+        scheduled_to: datetime | None = None,
     ) -> list[Execution]: ...
 
     @abstractmethod

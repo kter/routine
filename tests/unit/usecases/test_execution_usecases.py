@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from routineops.app.request_context import RequestContext
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
@@ -130,12 +131,18 @@ def mock_storage() -> MagicMock:
 
 
 @pytest.fixture
+def request_context() -> RequestContext:
+    return RequestContext(tenant_id=TENANT_ID, user_sub=USER_SUB)
+
+
+@pytest.fixture
 def usecases(
     mock_exec_repo: MagicMock,
     mock_task_repo: MagicMock,
     mock_storage: MagicMock,
+    request_context: RequestContext,
 ) -> ExecutionUsecases:
-    return ExecutionUsecases(mock_exec_repo, mock_task_repo, mock_storage)
+    return ExecutionUsecases(mock_exec_repo, mock_task_repo, mock_storage, request_context)
 
 
 class TestStartExecution:
@@ -156,7 +163,7 @@ class TestStartExecution:
         exec_step = make_exec_step(execution.id, step_id=step.id)
         mock_exec_repo.create_step.return_value = exec_step
 
-        result = usecases.start_execution(TENANT_ID, task_id, USER_SUB)
+        result = usecases.start_execution(task_id)
 
         mock_exec_repo.create.assert_called_once()
         mock_exec_repo.create_step.assert_called_once()
@@ -170,7 +177,7 @@ class TestStartExecution:
         mock_task_repo.get_with_steps.return_value = None
 
         with pytest.raises(NotFoundError, match="Task"):
-            usecases.start_execution(TENANT_ID, uuid4(), USER_SUB)
+            usecases.start_execution(uuid4())
 
     def test_raises_validation_for_inactive_task(
         self,
@@ -182,7 +189,7 @@ class TestStartExecution:
         mock_task_repo.get_with_steps.return_value = task
 
         with pytest.raises(ValidationError, match="not active"):
-            usecases.start_execution(TENANT_ID, task.id, USER_SUB)
+            usecases.start_execution(task.id)
 
 
 class TestCompleteStep:
@@ -201,7 +208,7 @@ class TestCompleteStep:
         )
         mock_exec_repo.update_step.return_value = completed_step
 
-        result = usecases.complete_step(TENANT_ID, execution.id, exec_step.id, USER_SUB)
+        result = usecases.complete_step(execution.id, exec_step.id)
 
         assert result == completed_step
         assert mock_exec_repo.update_step.called
@@ -221,10 +228,8 @@ class TestCompleteStep:
 
         with pytest.raises(ValidationError, match="Evidence text is required"):
             usecases.complete_step(
-                TENANT_ID,
                 execution.id,
                 exec_step.id,
-                USER_SUB,
                 evidence_text=None,
             )
 
@@ -239,7 +244,7 @@ class TestCompleteStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="already"):
-            usecases.complete_step(TENANT_ID, execution.id, exec_step.id, USER_SUB)
+            usecases.complete_step(execution.id, exec_step.id)
 
 
 class TestCompleteExecution:
@@ -256,7 +261,7 @@ class TestCompleteExecution:
         completed_exec = make_execution(status=ExecutionStatus.COMPLETED)
         mock_exec_repo.update.return_value = completed_exec
 
-        result = usecases.complete_execution(TENANT_ID, execution.id)
+        result = usecases.complete_execution(execution.id)
 
         assert result == completed_exec
         call_arg = mock_exec_repo.update.call_args[0][0]
@@ -273,7 +278,7 @@ class TestCompleteExecution:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="required step"):
-            usecases.complete_execution(TENANT_ID, execution.id)
+            usecases.complete_execution(execution.id)
 
 
 class TestSkipStep:
@@ -292,7 +297,7 @@ class TestSkipStep:
         )
         mock_exec_repo.update_step.return_value = skipped_step
 
-        usecases.skip_step(TENANT_ID, execution.id, exec_step.id)
+        usecases.skip_step(execution.id, exec_step.id)
 
         call_arg = mock_exec_repo.update_step.call_args[0][0]
         assert call_arg.status == StepStatus.SKIPPED
@@ -308,4 +313,4 @@ class TestSkipStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="Cannot skip a required step"):
-            usecases.skip_step(TENANT_ID, execution.id, exec_step.id)
+            usecases.skip_step(execution.id, exec_step.id)

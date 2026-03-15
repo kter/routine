@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { formatDate } from "@/lib/utils";
 import type { DashboardTask } from "../types";
+import { toDashboardTaskViewModel } from "../view-models";
 
 interface UpcomingPanelProps {
   tasks: DashboardTask[];
@@ -44,27 +44,31 @@ export function UpcomingPanel({ tasks }: UpcomingPanelProps) {
             </p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <div
-              key={`${task.taskId}-${task.scheduledFor}`}
-              className="flex items-center justify-between gap-4 px-4 py-2.5"
-              style={{ borderColor: "hsl(218 28% 12%)" }}
-            >
-              <Link
-                to={`/tasks/${task.taskId}`}
-                className="min-w-0 flex-1 truncate text-sm hover:underline underline-offset-2"
-                style={{ color: "hsl(210 20% 75%)" }}
+          tasks.map((task) => {
+            const display = toDashboardTaskViewModel(task);
+
+            return (
+              <div
+                key={`${display.taskId}-${display.scheduledLabel}`}
+                className="flex items-center justify-between gap-4 px-4 py-2.5"
+                style={{ borderColor: "hsl(218 28% 12%)" }}
               >
-                {task.title}
-              </Link>
-              <span
-                className="shrink-0 font-mono-data text-[11px]"
-                style={{ color: "hsl(215 16% 40%)" }}
-              >
-                {formatDate(task.scheduledFor)}
-              </span>
-            </div>
-          ))
+                <Link
+                  to={display.taskHref}
+                  className="min-w-0 flex-1 truncate text-sm hover:underline underline-offset-2"
+                  style={{ color: "hsl(210 20% 75%)" }}
+                >
+                  {display.title}
+                </Link>
+                <span
+                  className="shrink-0 font-mono-data text-[11px]"
+                  style={{ color: "hsl(215 16% 40%)" }}
+                >
+                  {display.scheduledLabel}
+                </span>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

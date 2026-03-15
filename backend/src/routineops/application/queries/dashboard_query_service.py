@@ -43,7 +43,11 @@ class DashboardQueryService:
         week_end = current_time + timedelta(days=8)
 
         tasks = self._task_repo.list(tenant_id, active_only=True)
-        executions = self._exec_repo.list(tenant_id)
+        executions = self._exec_repo.list(
+            tenant_id,
+            scheduled_from=search_start,
+            scheduled_to=week_end,
+        )
         executions_by_task: dict[UUID, list[Execution]] = {}
         for execution in executions:
             executions_by_task.setdefault(execution.task_id, []).append(execution)

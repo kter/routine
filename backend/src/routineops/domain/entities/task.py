@@ -19,7 +19,7 @@ class Step:
     created_at: datetime
     updated_at: datetime
 
-    def to_snapshot(self) -> dict[str, str | bool]:
+    def to_snapshot(self) -> dict[str, object]:
         return {
             "title": self.title,
             "instruction": self.instruction,

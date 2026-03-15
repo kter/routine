@@ -36,13 +36,13 @@ export interface Execution {
   steps: ExecutionStep[];
 }
 
-export interface StartExecutionRequest {
+export interface StartExecutionInput {
   taskId: string;
   scheduledFor?: string;
   notes?: string;
 }
 
-export interface CompleteStepRequest {
+export interface CompleteStepInput {
   evidenceText?: string;
   evidenceImageKey?: string;
   notes?: string;

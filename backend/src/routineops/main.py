@@ -1,3 +1,6 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
@@ -5,9 +8,16 @@ from mangum import Mangum
 from routineops.config.settings import ApiSettings, get_api_settings
 from routineops.infrastructure.db.engine import init_db
 from routineops.infrastructure.monitoring.sentry import init_sentry
+from routineops.interface.api.error_handlers import register_exception_handlers
 from routineops.interface.api.v1.router import router as v1_router
 
 init_sentry(include_fastapi=True)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    yield
 
 
 def create_app(settings: ApiSettings | None = None) -> FastAPI:
@@ -16,6 +26,7 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
         title="RoutineOps API",
         version="1.0.0",
         docs_url="/docs" if settings.env != "prd" else None,
+        lifespan=lifespan,
     )
 
     app.add_middleware(
@@ -26,11 +37,8 @@ def create_app(settings: ApiSettings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    register_exception_handlers(app)
     app.include_router(v1_router, prefix="/api/v1")
-
-    @app.on_event("startup")
-    async def startup() -> None:
-        init_db()
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -138,7 +138,7 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
             timezone=m.timezone,
             estimated_minutes=m.estimated_minutes,
             is_active=m.is_active,
-            tags=decode_json_array(m.tags),
+            tags=[str(tag) for tag in decode_json_array(m.tags)],
             metadata=decode_json_object(m.metadata_),
             created_by=m.created_by,
             created_at=m.created_at,

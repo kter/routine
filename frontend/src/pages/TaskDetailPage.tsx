@@ -5,8 +5,8 @@ import { useTaskMutations } from "@/features/tasks/hooks/useTaskMutations";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { useStartExecution } from "@/features/executions/hooks/useExecution";
 import { formatCron } from "@/lib/utils";
-import { executionsApi } from "@/lib/api/executions";
 import { useState } from "react";
 
 export default function TaskDetailPage() {
@@ -14,6 +14,7 @@ export default function TaskDetailPage() {
   const navigate = useNavigate();
   const { task, isLoading, error } = useTask(id!);
   const { deleteTask } = useTaskMutations();
+  const { startExecution } = useStartExecution();
   const [showDelete, setShowDelete] = useState(false);
 
   const handleDelete = async () => {
@@ -22,7 +23,7 @@ export default function TaskDetailPage() {
   };
 
   const handleStartExecution = async () => {
-    const execution = await executionsApi.start({ taskId: id! });
+    const execution = await startExecution(id!);
     navigate(`/executions/${execution.id}`);
   };
 

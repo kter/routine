@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { TaskForm } from "@/features/tasks/components/TaskForm";
 import { useTaskMutations } from "@/features/tasks/hooks/useTaskMutations";
-import type { CreateTaskRequest } from "@/features/tasks/types";
+import type { TaskInput } from "@/features/tasks/types";
 
 export default function TaskNewPage() {
   const navigate = useNavigate();
   const { createTask } = useTaskMutations();
 
-  const handleSubmit = async (data: CreateTaskRequest) => {
+  const handleSubmit = async (data: TaskInput) => {
     const task = await createTask(data);
     navigate(`/tasks/${task.id}`);
   };

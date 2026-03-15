@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from routineops.interface.api.deps import TenantDep, get_dashboard_usecases
+from routineops.interface.api.deps import RequestContextDep, get_dashboard_usecases
 from routineops.interface.schemas.dashboard import DashboardResponse, DashboardTaskItem
 from routineops.usecases.dashboard_usecases import DashboardUsecases
 
@@ -11,9 +11,8 @@ DashboardUsecasesDep = Annotated[DashboardUsecases, Depends(get_dashboard_usecas
 
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard(tenant: TenantDep, usecases: DashboardUsecasesDep) -> DashboardResponse:
-    tenant_id, _ = tenant
-    data = usecases.get_dashboard(tenant_id)
+def get_dashboard(_context: RequestContextDep, usecases: DashboardUsecasesDep) -> DashboardResponse:
+    data = usecases.get_dashboard()
     return DashboardResponse(
         today=[
             DashboardTaskItem(

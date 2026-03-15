@@ -1,33 +1,59 @@
 import { apiClient } from "./client";
 import type {
-  Execution,
-  StartExecutionRequest,
-  CompleteStepRequest,
+  StartExecutionInput,
+  CompleteStepInput,
 } from "@/features/executions/types";
+import type { ExecutionDto } from "@/lib/api/dto/executions";
+import {
+  mapExecutionDto,
+  toCompleteStepRequestDto,
+  toStartExecutionRequestDto,
+} from "@/features/executions/mappers";
 
 export const executionsApi = {
-  list: () => apiClient.get<Execution[]>("/api/v1/executions"),
-  get: (id: string) => apiClient.get<Execution>(`/api/v1/executions/${id}`),
-  start: (data: StartExecutionRequest) =>
-    apiClient.post<Execution>("/api/v1/executions", data),
+  list: async () =>
+    (await apiClient.get<ExecutionDto[]>("/api/v1/executions")).map(
+      mapExecutionDto,
+    ),
+  get: async (id: string) =>
+    mapExecutionDto(
+      await apiClient.get<ExecutionDto>(`/api/v1/executions/${id}`),
+    ),
+  start: async (data: StartExecutionInput) =>
+    mapExecutionDto(
+      await apiClient.post<ExecutionDto>(
+        "/api/v1/executions",
+        toStartExecutionRequestDto(data),
+      ),
+    ),
   completeStep: (
     executionId: string,
     stepId: string,
-    data: CompleteStepRequest,
+    data: CompleteStepInput,
   ) =>
     apiClient.patch<void>(
       `/api/v1/executions/${executionId}/steps/${stepId}/complete`,
-      data,
+      toCompleteStepRequestDto(data),
     ),
   skipStep: (executionId: string, stepId: string) =>
     apiClient.patch<void>(
       `/api/v1/executions/${executionId}/steps/${stepId}/skip`,
       {},
     ),
-  complete: (id: string, data: { notes?: string }) =>
-    apiClient.patch<Execution>(`/api/v1/executions/${id}/complete`, data),
-  abandon: (id: string, data: { notes?: string }) =>
-    apiClient.patch<Execution>(`/api/v1/executions/${id}/abandon`, data),
+  complete: async (id: string, data: { notes?: string }) =>
+    mapExecutionDto(
+      await apiClient.patch<ExecutionDto>(
+        `/api/v1/executions/${id}/complete`,
+        data,
+      ),
+    ),
+  abandon: async (id: string, data: { notes?: string }) =>
+    mapExecutionDto(
+      await apiClient.patch<ExecutionDto>(
+        `/api/v1/executions/${id}/abandon`,
+        data,
+      ),
+    ),
   getEvidenceUploadUrl: (
     executionId: string,
     stepId: string,

@@ -5,6 +5,7 @@ from routineops.config.settings import (
     clear_settings_caches,
     get_api_settings,
     get_post_confirmation_settings,
+    get_tenant_provisioning_settings,
 )
 
 
@@ -33,10 +34,17 @@ def test_get_api_settings_reads_env_overrides() -> None:
     ]
 
 
-def test_get_post_confirmation_settings_uses_defaults() -> None:
+def test_get_tenant_provisioning_settings_uses_defaults() -> None:
     with patch.dict(os.environ, {}, clear=False):
         clear_settings_caches()
-        settings = get_post_confirmation_settings()
+        settings = get_tenant_provisioning_settings()
 
     assert settings.aws_region == "ap-northeast-1"
     assert settings.db_name == "postgres"
+
+
+def test_get_post_confirmation_settings_aliases_tenant_provisioning_settings() -> None:
+    with patch.dict(os.environ, {}, clear=False):
+        clear_settings_caches()
+
+        assert get_post_confirmation_settings() == get_tenant_provisioning_settings()

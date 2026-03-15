@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { TaskForm } from "@/features/tasks/components/TaskForm";
 import { useTask } from "@/features/tasks/hooks/useTasks";
 import { useTaskMutations } from "@/features/tasks/hooks/useTaskMutations";
-import type { CreateTaskRequest } from "@/features/tasks/types";
+import type { TaskInput } from "@/features/tasks/types";
 
 export default function TaskEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -10,7 +10,7 @@ export default function TaskEditPage() {
   const { task, isLoading } = useTask(id!);
   const { updateTask } = useTaskMutations();
 
-  const handleSubmit = async (data: CreateTaskRequest) => {
+  const handleSubmit = async (data: TaskInput) => {
     await updateTask(id!, data);
     navigate(`/tasks/${id}`);
   };
