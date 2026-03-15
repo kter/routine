@@ -41,8 +41,16 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
-ignore = ["B008"]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = [
+    "B008",   # デフォルト引数での関数呼び出し
+    "S311",   # 非暗号用途の random モジュール使用（テストデータ生成等）
+    "S603",   # subprocess 呼び出し全般（安全なリスト形式でも発火する誤検知）
+    "S607",   # 部分パスでのプロセス起動（"make", "git" 等の短縮コマンド名）
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test_*.py" = ["S101", "S105", "S108"]   # pytest の assert 文 / テスト用偽パスワード / /tmp パス参照
 
 [tool.mypy]
 python_version = "3.12"
