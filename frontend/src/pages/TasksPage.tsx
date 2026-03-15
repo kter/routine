@@ -58,7 +58,7 @@ export default function TasksPage() {
             ERR: データの取得に失敗しました
           </p>
           <button
-            onClick={refetch}
+            onClick={() => refetch()}
             className="font-mono-data text-xs hover:underline"
             style={{ color: "hsl(43 96% 56%)" }}
           >
