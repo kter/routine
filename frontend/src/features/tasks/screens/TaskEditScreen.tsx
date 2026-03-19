@@ -1,3 +1,4 @@
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { TaskForm } from "@/features/tasks/components/TaskForm";
 import { useTaskEditScreen } from "@/features/tasks/hooks/useTaskEditScreen";
 
@@ -5,10 +6,20 @@ export function TaskEditScreen() {
   const screen = useTaskEditScreen();
 
   if (screen.status === "loading")
-    return <div className="text-sm text-muted-foreground">読み込み中...</div>;
+    return (
+      <PageStateMessage
+        title="読み込み中..."
+        className="flex h-32 items-center"
+        titleClassName="text-sm text-muted-foreground"
+      />
+    );
   if (screen.status === "not_found")
     return (
-      <div className="text-sm text-destructive">タスクが見つかりません</div>
+      <PageStateMessage
+        title="タスクが見つかりません"
+        className="flex h-32 items-center"
+        titleClassName="text-sm text-destructive"
+      />
     );
 
   return (

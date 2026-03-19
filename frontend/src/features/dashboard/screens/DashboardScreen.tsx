@@ -1,3 +1,5 @@
+import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { TodayTasksPanel } from "@/features/dashboard/components/TodayTasksPanel";
 import { OverduePanel } from "@/features/dashboard/components/OverduePanel";
 import { UpcomingPanel } from "@/features/dashboard/components/UpcomingPanel";
@@ -8,34 +10,27 @@ export function DashboardScreen() {
 
   if (screen.status === "loading") {
     return (
-      <div className="space-y-4 animate-fade-up">
-        <div className="h-5 w-32 rounded shimmer" />
-        <div className="h-48 rounded-md shimmer" />
-        <div className="flex gap-4">
-          <div className="h-64 flex-1 rounded-md shimmer" />
-          <div className="h-64 flex-1 rounded-md shimmer" />
-        </div>
-      </div>
+      <PageSkeleton
+        blocks={[
+          { className: "h-5 w-32 rounded shimmer md:col-span-2" },
+          { className: "h-48 rounded-md shimmer md:col-span-2" },
+          { className: "h-64 rounded-md shimmer" },
+          { className: "h-64 rounded-md shimmer" },
+        ]}
+        className="grid animate-fade-up gap-4 md:grid-cols-2"
+      />
     );
   }
 
   if (screen.status === "error") {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <p
-          className="font-mono-data text-sm"
-          style={{ color: "hsl(0 72% 54%)" }}
-        >
-          ERR: データの取得に失敗しました
-        </p>
-        <button
-          onClick={screen.retry}
-          className="font-mono-data text-xs hover:underline"
-          style={{ color: "hsl(43 96% 56%)" }}
-        >
-          再試行 →
-        </button>
-      </div>
+      <PageStateMessage
+        title="ERR: データの取得に失敗しました"
+        actionLabel="再試行 →"
+        onAction={screen.retry}
+        titleStyle={{ color: "hsl(0 72% 54%)" }}
+        actionStyle={{ color: "hsl(43 96% 56%)" }}
+      />
     );
   }
 

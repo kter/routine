@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { ExecutionWizard } from "@/features/executions/components/ExecutionWizard";
 import { useExecutionScreen } from "@/features/executions/hooks/useExecutionScreen";
 
@@ -8,24 +10,23 @@ export function ExecutionScreen() {
 
   if (screen.status === "loading") {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 animate-fade-up">
-        <div className="h-5 w-48 rounded shimmer" />
-        <div className="h-12 rounded-md shimmer" />
-        <div className="h-64 rounded-md shimmer" />
-      </div>
+      <PageSkeleton
+        blocks={[
+          { className: "h-5 w-48 rounded shimmer" },
+          { className: "h-12 rounded-md shimmer" },
+          { className: "h-64 rounded-md shimmer" },
+        ]}
+        className="mx-auto max-w-2xl space-y-4 animate-fade-up"
+      />
     );
   }
 
   if (screen.status === "not_found") {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p
-          className="font-mono-data text-sm"
-          style={{ color: "hsl(0 72% 54%)" }}
-        >
-          ERR: 実行データが見つかりません
-        </p>
-      </div>
+      <PageStateMessage
+        title="ERR: 実行データが見つかりません"
+        titleStyle={{ color: "hsl(0 72% 54%)" }}
+      />
     );
   }
 

@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, MinusCircle, Circle } from "lucide-react";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { useExecutionLogScreen } from "@/features/executions/hooks/useExecutionLogScreen";
 export function ExecutionLogScreen() {
@@ -7,28 +9,25 @@ export function ExecutionLogScreen() {
 
   if (screen.status === "loading") {
     return (
-      <div className="mx-auto max-w-2xl space-y-4 animate-fade-up">
-        <div className="h-5 w-32 rounded shimmer" />
-        <div className="h-20 rounded-md shimmer" />
-        <div className="space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 rounded-md shimmer" />
-          ))}
-        </div>
-      </div>
+      <PageSkeleton
+        blocks={[
+          { className: "h-5 w-32 rounded shimmer" },
+          { className: "h-20 rounded-md shimmer" },
+          { className: "h-16 rounded-md shimmer" },
+          { className: "h-16 rounded-md shimmer" },
+          { className: "h-16 rounded-md shimmer" },
+        ]}
+        className="mx-auto max-w-2xl space-y-4 animate-fade-up"
+      />
     );
   }
 
   if (screen.status === "not_found") {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p
-          className="font-mono-data text-sm"
-          style={{ color: "hsl(0 72% 54%)" }}
-        >
-          ERR: 実行ログが見つかりません
-        </p>
-      </div>
+      <PageStateMessage
+        title="ERR: 実行ログが見つかりません"
+        titleStyle={{ color: "hsl(0 72% 54%)" }}
+      />
     );
   }
 

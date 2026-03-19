@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { useExecutions } from "@/features/executions/hooks/useExecution";
 import type { Execution } from "@/features/executions/types";
 
@@ -199,49 +201,33 @@ export default function ExecutionListPage() {
 
       {/* States */}
       {isLoading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-16 rounded-md shimmer"
-              style={{ animationDelay: `${i * 0.08}s`, opacity: 1 - i * 0.15 }}
-            />
-          ))}
-        </div>
+        <PageSkeleton
+          blocks={[0, 1, 2, 3].map((i) => ({
+            className: "h-16 rounded-md shimmer",
+            style: { animationDelay: `${i * 0.08}s`, opacity: 1 - i * 0.15 },
+          }))}
+          className="space-y-2"
+        />
       ) : error ? (
-        <div
+        <PageStateMessage
+          title="ERR: データの取得に失敗しました"
+          actionLabel="再試行 →"
+          onAction={() => refetch()}
           className="flex h-40 flex-col items-center justify-center gap-3 rounded-md"
           style={{ border: "1px solid hsl(218 28% 14%)" }}
-        >
-          <p
-            className="font-mono-data text-sm"
-            style={{ color: "hsl(0 72% 54%)" }}
-          >
-            ERR: データの取得に失敗しました
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="font-mono-data text-xs hover:underline"
-            style={{ color: "hsl(43 96% 56%)" }}
-          >
-            再試行 →
-          </button>
-        </div>
+          titleStyle={{ color: "hsl(0 72% 54%)" }}
+          actionStyle={{ color: "hsl(43 96% 56%)" }}
+        />
       ) : executions.length === 0 ? (
-        <div
+        <PageStateMessage
+          title="No records"
+          description="実行ログがありません"
           className="flex h-40 flex-col items-center justify-center gap-2 rounded-md"
           style={{ border: "1px dashed hsl(218 28% 18%)" }}
-        >
-          <span
-            className="font-mono-data text-[11px] tracking-widest uppercase"
-            style={{ color: "hsl(215 16% 30%)" }}
-          >
-            No records
-          </span>
-          <p className="text-sm" style={{ color: "hsl(215 16% 36%)" }}>
-            実行ログがありません
-          </p>
-        </div>
+          titleClassName="font-mono-data text-[11px] tracking-widest uppercase"
+          titleStyle={{ color: "hsl(215 16% 30%)" }}
+          descriptionStyle={{ color: "hsl(215 16% 36%)" }}
+        />
       ) : (
         <div className="space-y-1.5">
           {executions.map((execution, i) => (

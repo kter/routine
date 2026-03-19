@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import { PageSkeleton } from "@/components/common/PageSkeleton";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { TaskList } from "@/features/tasks/components/TaskList";
 import { useTasks } from "@/features/tasks/hooks/useTasks";
 
@@ -37,34 +39,23 @@ export default function TasksPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="h-24 rounded-md shimmer"
-              style={{ opacity: 1 - i * 0.2 }}
-            />
-          ))}
-        </div>
+        <PageSkeleton
+          blocks={[0, 1, 2].map((i) => ({
+            className: "h-24 rounded-md shimmer",
+            style: { opacity: 1 - i * 0.2 },
+          }))}
+          className="space-y-2"
+        />
       ) : error ? (
-        <div
+        <PageStateMessage
+          title="ERR: データの取得に失敗しました"
+          actionLabel="再試行 →"
+          onAction={() => refetch()}
           className="flex h-40 flex-col items-center justify-center gap-3 rounded-md"
           style={{ border: "1px solid hsl(218 28% 14%)" }}
-        >
-          <p
-            className="font-mono-data text-sm"
-            style={{ color: "hsl(0 72% 54%)" }}
-          >
-            ERR: データの取得に失敗しました
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="font-mono-data text-xs hover:underline"
-            style={{ color: "hsl(43 96% 56%)" }}
-          >
-            再試行 →
-          </button>
-        </div>
+          titleStyle={{ color: "hsl(0 72% 54%)" }}
+          actionStyle={{ color: "hsl(43 96% 56%)" }}
+        />
       ) : (
         <TaskList
           tasks={tasks}

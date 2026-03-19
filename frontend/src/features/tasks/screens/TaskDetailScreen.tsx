@@ -2,16 +2,27 @@ import { Link } from "react-router-dom";
 import { Edit, Play, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
+import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { useTaskDetailScreen } from "@/features/tasks/hooks/useTaskDetailScreen";
 export function TaskDetailScreen() {
   const screen = useTaskDetailScreen();
 
   if (screen.status === "loading")
-    return <div className="text-sm text-muted-foreground">読み込み中...</div>;
+    return (
+      <PageStateMessage
+        title="読み込み中..."
+        className="flex h-32 items-center"
+        titleClassName="text-sm text-muted-foreground"
+      />
+    );
   if (screen.status === "not_found")
     return (
-      <div className="text-sm text-destructive">タスクが見つかりません</div>
+      <PageStateMessage
+        title="タスクが見つかりません"
+        className="flex h-32 items-center"
+        titleClassName="text-sm text-destructive"
+      />
     );
 
   return (
