@@ -5,6 +5,9 @@ import { z } from "zod";
 import { Link } from "react-router-dom";
 import { signIn } from "@/lib/auth/cognito";
 import { useAuth } from "../hooks/useAuth";
+import { AuthFormError } from "./AuthFormError";
+import { AuthFormField } from "./AuthFormField";
+import { AuthSubmitButton } from "./AuthSubmitButton";
 
 const schema = z.object({
   email: z.string().email("有効なメールアドレスを入力してください"),
@@ -35,40 +38,24 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium">メールアドレス</label>
-        <input
-          type="email"
-          {...register("email")}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        {errors.email && (
-          <p className="mt-1 text-xs text-destructive">
-            {errors.email.message}
-          </p>
-        )}
-      </div>
-      <div>
-        <label className="block text-sm font-medium">パスワード</label>
-        <input
-          type="password"
-          {...register("password")}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        {errors.password && (
-          <p className="mt-1 text-xs text-destructive">
-            {errors.password.message}
-          </p>
-        )}
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-      >
-        {isSubmitting ? "ログイン中..." : "ログイン"}
-      </button>
+      <AuthFormField
+        label="メールアドレス"
+        type="email"
+        error={errors.email?.message}
+        {...register("email")}
+      />
+      <AuthFormField
+        label="パスワード"
+        type="password"
+        error={errors.password?.message}
+        {...register("password")}
+      />
+      <AuthFormError message={error} />
+      <AuthSubmitButton
+        idleLabel="ログイン"
+        submittingLabel="ログイン中..."
+        isSubmitting={isSubmitting}
+      />
       <p className="text-center text-sm text-muted-foreground">
         アカウント作成は{" "}
         <Link

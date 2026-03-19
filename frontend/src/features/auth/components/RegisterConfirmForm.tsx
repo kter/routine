@@ -1,5 +1,8 @@
 import type { UseFormReturn } from "react-hook-form";
 import type { ConfirmValues } from "../schemas/register";
+import { AuthFormError } from "./AuthFormError";
+import { AuthFormField } from "./AuthFormField";
+import { AuthSubmitButton } from "./AuthSubmitButton";
 
 interface RegisterConfirmFormProps {
   email: string;
@@ -20,28 +23,19 @@ export function RegisterConfirmForm({
         <span className="font-medium">{email}</span>{" "}
         に確認コードを送信しました。
       </p>
-      <div>
-        <label className="block text-sm font-medium">確認コード</label>
-        <input
-          type="text"
-          inputMode="numeric"
-          {...form.register("code")}
-          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        {form.formState.errors.code && (
-          <p className="mt-1 text-xs text-destructive">
-            {form.formState.errors.code.message}
-          </p>
-        )}
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <button
-        type="submit"
-        disabled={form.formState.isSubmitting}
-        className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-      >
-        {form.formState.isSubmitting ? "確認中..." : "確認"}
-      </button>
+      <AuthFormField
+        label="確認コード"
+        type="text"
+        inputMode="numeric"
+        error={form.formState.errors.code?.message}
+        {...form.register("code")}
+      />
+      <AuthFormError message={error} />
+      <AuthSubmitButton
+        idleLabel="確認"
+        submittingLabel="確認中..."
+        isSubmitting={form.formState.isSubmitting}
+      />
     </form>
   );
 }
