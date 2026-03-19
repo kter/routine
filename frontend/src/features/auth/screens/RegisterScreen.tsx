@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { PageStateMessage } from "@/components/common/PageStateMessage";
+import { AuthStateScreen } from "@/features/auth/components/AuthStateScreen";
 import { AuthScreenFrame } from "@/features/auth/components/AuthScreenFrame";
 import { RegisterConfirmForm } from "@/features/auth/components/RegisterConfirmForm";
 import { RegisterSignUpForm } from "@/features/auth/components/RegisterSignUpForm";
@@ -10,15 +10,10 @@ export function RegisterScreen() {
 
   if (screen.status === "loading") {
     return (
-      <AuthScreenFrame>
-        <PageStateMessage
-          title="認証状態を確認中..."
-          description="サインアップ画面を準備しています。"
-          className="flex min-h-40 flex-col items-center justify-center gap-3"
-          titleClassName="text-sm"
-          descriptionClassName="text-xs text-muted-foreground"
-        />
-      </AuthScreenFrame>
+      <AuthStateScreen
+        title="認証状態を確認中..."
+        description="サインアップ画面を準備しています。"
+      />
     );
   }
 
