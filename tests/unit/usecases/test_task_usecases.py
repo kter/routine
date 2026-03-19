@@ -82,13 +82,13 @@ class TestListTasks:
 
         result = usecases.list_tasks()
 
-        mock_repo.list.assert_called_once_with(TENANT_ID, active_only=False)
+        mock_repo.list.assert_called_once_with(active_only=False)
         assert result == [task]
 
     def test_active_only_flag(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
         mock_repo.list.return_value = []
         usecases.list_tasks(active_only=True)
-        mock_repo.list.assert_called_once_with(TENANT_ID, active_only=True)
+        mock_repo.list.assert_called_once_with(active_only=True)
 
 
 class TestGetTask:
@@ -187,7 +187,7 @@ class TestDeleteTask:
 
         usecases.delete_task(task.id)
 
-        mock_repo.delete.assert_called_once_with(TENANT_ID, task.id)
+        mock_repo.delete.assert_called_once_with(task.id)
 
     def test_raises_not_found_for_missing_task(
         self, usecases: TaskUsecases, mock_repo: MagicMock

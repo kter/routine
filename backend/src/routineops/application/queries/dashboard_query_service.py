@@ -37,14 +37,13 @@ class DashboardQueryService:
         self._task_repo = task_repo
         self._exec_repo = exec_repo
 
-    def get_dashboard(self, tenant_id: UUID, *, now_utc: datetime | None = None) -> DashboardData:
+    def get_dashboard(self, *, now_utc: datetime | None = None) -> DashboardData:
         current_time = now_utc or datetime.now(tz=UTC)
         search_start = current_time - timedelta(days=7)
         week_end = current_time + timedelta(days=8)
 
-        tasks = self._task_repo.list(tenant_id, active_only=True)
+        tasks = self._task_repo.list(active_only=True)
         executions = self._exec_repo.list(
-            tenant_id,
             scheduled_from=search_start,
             scheduled_to=week_end,
         )

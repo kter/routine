@@ -12,7 +12,6 @@ class ExecutionRepositoryPort(ABC):
     @abstractmethod
     def list(
         self,
-        tenant_id: UUID,
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
         scheduled_from: datetime | None = None,
@@ -20,10 +19,10 @@ class ExecutionRepositoryPort(ABC):
     ) -> list[Execution]: ...
 
     @abstractmethod
-    def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None: ...
+    def get(self, execution_id: UUID) -> Execution | None: ...
 
     @abstractmethod
-    def get_with_steps(self, tenant_id: UUID, execution_id: UUID) -> Execution | None: ...
+    def get_with_steps(self, execution_id: UUID) -> Execution | None: ...
 
     @abstractmethod
     def create(self, execution: Execution) -> Execution: ...

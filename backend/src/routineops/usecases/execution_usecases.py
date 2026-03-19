@@ -29,7 +29,7 @@ class ExecutionUsecases:
         scheduled_for: datetime | None = None,
         notes: str = "",
     ) -> Execution:
-        task = self._task_repo.get_with_steps(self._context.tenant_id, task_id)
+        task = self._task_repo.get_with_steps(task_id)
         if task is None:
             raise NotFoundError("Task", str(task_id))
 
@@ -86,7 +86,7 @@ class ExecutionUsecases:
         evidence_image_key: str | None = None,
         notes: str = "",
     ) -> ExecutionStep:
-        execution = self._exec_repo.get_with_steps(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get_with_steps(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
 
@@ -122,7 +122,7 @@ class ExecutionUsecases:
         execution_id: UUID,
         step_id: UUID,
     ) -> ExecutionStep:
-        execution = self._exec_repo.get_with_steps(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get_with_steps(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
 
@@ -148,7 +148,7 @@ class ExecutionUsecases:
         execution_id: UUID,
         notes: str = "",
     ) -> Execution:
-        execution = self._exec_repo.get_with_steps(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get_with_steps(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
 
@@ -174,7 +174,7 @@ class ExecutionUsecases:
         execution_id: UUID,
         notes: str = "",
     ) -> Execution:
-        execution = self._exec_repo.get_with_steps(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get_with_steps(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
 
@@ -197,7 +197,7 @@ class ExecutionUsecases:
         content_type: str,
     ) -> tuple[str, str]:
         """Returns (upload_url, object_key)."""
-        execution = self._exec_repo.get(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
 
@@ -210,10 +210,10 @@ class ExecutionUsecases:
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
     ) -> list[Execution]:
-        return self._exec_repo.list(self._context.tenant_id, task_id=task_id, status=status)
+        return self._exec_repo.list(task_id=task_id, status=status)
 
     def get_execution(self, execution_id: UUID) -> Execution:
-        execution = self._exec_repo.get_with_steps(self._context.tenant_id, execution_id)
+        execution = self._exec_repo.get_with_steps(execution_id)
         if execution is None:
             raise NotFoundError("Execution", str(execution_id))
         return execution

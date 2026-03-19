@@ -17,10 +17,10 @@ class TaskUsecases:
         self._context = context
 
     def list_tasks(self, active_only: bool = False) -> list[Task]:
-        return self._repo.list(self._context.tenant_id, active_only=active_only)
+        return self._repo.list(active_only=active_only)
 
     def get_task(self, task_id: UUID) -> Task:
-        task = self._repo.get_with_steps(self._context.tenant_id, task_id)
+        task = self._repo.get_with_steps(task_id)
         if task is None:
             raise NotFoundError("Task", str(task_id))
         return task
@@ -65,7 +65,7 @@ class TaskUsecases:
         task_id: UUID,
         **kwargs: object,
     ) -> Task:
-        task = self._repo.get_with_steps(self._context.tenant_id, task_id)
+        task = self._repo.get_with_steps(task_id)
         if task is None:
             raise NotFoundError("Task", str(task_id))
 
@@ -94,10 +94,10 @@ class TaskUsecases:
         return self._repo.update(task)
 
     def delete_task(self, task_id: UUID) -> None:
-        task = self._repo.get(self._context.tenant_id, task_id)
+        task = self._repo.get(task_id)
         if task is None:
             raise NotFoundError("Task", str(task_id))
-        self._repo.delete(self._context.tenant_id, task_id)
+        self._repo.delete(task_id)
 
     def _build_steps(
         self,

@@ -18,22 +18,19 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
     def __init__(self, db: Session, tenant_id: UUID) -> None:
         super().__init__(db, tenant_id)
 
-    def list(self, tenant_id: UUID, active_only: bool = False) -> list[Task]:
-        self._assert_tenant(tenant_id)
+    def list(self, active_only: bool = False) -> list[Task]:
         q = self._query(TaskModel)
         if active_only:
             q = q.filter(TaskModel.is_active.is_(True))
         return [self._to_domain(m) for m in q.order_by(TaskModel.created_at.desc()).all()]
 
-    def get(self, tenant_id: UUID, task_id: UUID) -> Task | None:
-        self._assert_tenant(tenant_id)
+    def get(self, task_id: UUID) -> Task | None:
         m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         return self._to_domain(m) if m else None
 
-    def get_with_steps(self, tenant_id: UUID, task_id: UUID) -> Task | None:
+    def get_with_steps(self, task_id: UUID) -> Task | None:
         from sqlalchemy.orm import joinedload
 
-        self._assert_tenant(tenant_id)
         m = (
             self._query(TaskModel)
             .options(joinedload(TaskModel.steps))
@@ -51,7 +48,7 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         m.steps = [self._step_to_model(step) for step in task.steps]
         self._db.add(m)
         self._db.commit()
-        created_task = self.get_with_steps(task.tenant_id, task.id)
+        created_task = self.get_with_steps(task.id)
         if created_task is None:
             raise ValueError(f"Task {task.id} not found")
         return created_task
@@ -70,13 +67,12 @@ class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):
         self._apply_task_fields(m, task)
         m.steps = [self._step_to_model(step) for step in task.steps]
         self._db.commit()
-        updated_task = self.get_with_steps(task.tenant_id, task.id)
+        updated_task = self.get_with_steps(task.id)
         if updated_task is None:
             raise ValueError(f"Task {task.id} not found")
         return updated_task
 
-    def delete(self, tenant_id: UUID, task_id: UUID) -> None:
-        self._assert_tenant(tenant_id)
+    def delete(self, task_id: UUID) -> None:
         m = self._query(TaskModel).filter(TaskModel.id == task_id).first()
         if m:
             self._db.delete(m)

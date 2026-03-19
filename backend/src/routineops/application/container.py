@@ -44,4 +44,4 @@ def build_execution_usecases(
 def build_dashboard_usecases(*, db: Session, context: RequestContext) -> DashboardUsecases:
     task_repo = build_task_repository(db=db, context=context)
     exec_repo = build_execution_repository(db=db, context=context)
-    return DashboardUsecases(context, task_repo, exec_repo)
+    return DashboardUsecases(task_repo, exec_repo)

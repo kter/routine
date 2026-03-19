@@ -64,17 +64,13 @@ def test_query_service_classifies_today_and_overdue_using_task_timezone() -> Non
     exec_repo.list.return_value = []
     service = DashboardQueryService(task_repo, exec_repo)
 
-    result = service.get_dashboard(
-        TENANT_ID,
-        now_utc=datetime(2026, 3, 10, 23, 0, tzinfo=UTC),
-    )
+    result = service.get_dashboard(now_utc=datetime(2026, 3, 10, 23, 0, tzinfo=UTC))
 
     assert datetime(2026, 3, 10, 1, 0, tzinfo=UTC) in {
         item.scheduled_for for item in result.overdue
     }
     assert datetime(2026, 3, 11, 1, 0, tzinfo=UTC) in {item.scheduled_for for item in result.today}
     exec_repo.list.assert_called_once_with(
-        TENANT_ID,
         scheduled_from=datetime(2026, 3, 3, 23, 0, tzinfo=UTC),
         scheduled_to=datetime(2026, 3, 18, 23, 0, tzinfo=UTC),
     )
@@ -95,10 +91,7 @@ def test_query_service_attaches_matching_execution_metadata() -> None:
     ]
     service = DashboardQueryService(task_repo, exec_repo)
 
-    result = service.get_dashboard(
-        TENANT_ID,
-        now_utc=datetime(2026, 3, 13, 8, 0, tzinfo=UTC),
-    )
+    result = service.get_dashboard(now_utc=datetime(2026, 3, 13, 8, 0, tzinfo=UTC))
 
     matched_item = next(item for item in result.today if item.task_id == task.id)
     assert matched_item.execution_id is not None
@@ -113,10 +106,7 @@ def test_query_service_caps_upcoming_items_to_twenty() -> None:
     exec_repo.list.return_value = []
     service = DashboardQueryService(task_repo, exec_repo)
 
-    result = service.get_dashboard(
-        TENANT_ID,
-        now_utc=datetime(2026, 3, 1, 8, 0, tzinfo=UTC),
-    )
+    result = service.get_dashboard(now_utc=datetime(2026, 3, 1, 8, 0, tzinfo=UTC))
 
     assert len(result.upcoming) == 20
 
@@ -129,10 +119,9 @@ def test_query_service_reads_only_execution_window() -> None:
     service = DashboardQueryService(task_repo, exec_repo)
     now = datetime(2026, 3, 15, 12, 30, tzinfo=UTC)
 
-    service.get_dashboard(TENANT_ID, now_utc=now)
+    service.get_dashboard(now_utc=now)
 
     exec_repo.list.assert_called_once_with(
-        TENANT_ID,
         scheduled_from=datetime(2026, 3, 8, 12, 30, tzinfo=UTC),
         scheduled_to=datetime(2026, 3, 23, 12, 30, tzinfo=UTC),
     )

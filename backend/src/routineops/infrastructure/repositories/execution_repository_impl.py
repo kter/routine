@@ -20,13 +20,11 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
 
     def list(
         self,
-        tenant_id: UUID,
         task_id: UUID | None = None,
         status: ExecutionStatus | None = None,
         scheduled_from: datetime | None = None,
         scheduled_to: datetime | None = None,
     ) -> list[Execution]:
-        self._assert_tenant(tenant_id)
         q = self._query(ExecutionModel)
         if task_id is not None:
             q = q.filter(ExecutionModel.task_id == task_id)
@@ -38,15 +36,13 @@ class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):
             q = q.filter(ExecutionModel.scheduled_for <= scheduled_to)
         return [self._to_domain(m) for m in q.order_by(ExecutionModel.started_at.desc()).all()]
 
-    def get(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
-        self._assert_tenant(tenant_id)
+    def get(self, execution_id: UUID) -> Execution | None:
         m = self._query(ExecutionModel).filter(ExecutionModel.id == execution_id).first()
         return self._to_domain(m) if m else None
 
-    def get_with_steps(self, tenant_id: UUID, execution_id: UUID) -> Execution | None:
+    def get_with_steps(self, execution_id: UUID) -> Execution | None:
         from sqlalchemy.orm import joinedload
 
-        self._assert_tenant(tenant_id)
         m = (
             self._query(ExecutionModel)
             .options(joinedload(ExecutionModel.steps))
