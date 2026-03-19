@@ -41,18 +41,18 @@ export function RegisterScreen() {
 
         {screen.step === "signup" && (
           <RegisterSignUpForm
-            form={screen.signUpForm}
-            error={screen.error}
-            onSubmit={screen.onSignUp}
+            form={screen.signUpStep.form}
+            error={screen.signUpStep.error}
+            onSubmit={screen.signUpStep.onSubmit}
           />
         )}
 
         {screen.step === "confirm" && (
           <RegisterConfirmForm
             email={screen.email}
-            error={screen.error}
-            form={screen.confirmForm}
-            onSubmit={screen.onConfirm}
+            error={screen.confirmStep.error}
+            form={screen.confirmStep.form}
+            onSubmit={screen.confirmStep.onSubmit}
           />
         )}
       </div>
