@@ -1,9 +1,7 @@
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
-import { TodayTasksPanel } from "@/features/dashboard/components/TodayTasksPanel";
-import { OverduePanel } from "@/features/dashboard/components/OverduePanel";
-import { UpcomingPanel } from "@/features/dashboard/components/UpcomingPanel";
-import { useDashboardScreen } from "@/features/dashboard/hooks/useDashboardScreen";
+import { OverduePanel, TodayTasksPanel, UpcomingPanel } from "../components";
+import { useDashboardScreen } from "../hooks";
 
 export function DashboardScreen() {
   const screen = useDashboardScreen();
