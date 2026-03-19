@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, Integer, Text, Uuid
+from sqlalchemy import DateTime, Integer, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from routineops.infrastructure.db.base import Base, TimestampMixin
+from routineops.infrastructure.db.dsql_compat import JsonObjectText
 
 if TYPE_CHECKING:
     from routineops.infrastructure.db.models.execution_step_model import ExecutionStepModel
@@ -25,12 +26,13 @@ class ExecutionModel(Base, TimestampMixin):
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     metadata_: Mapped[dict[str, object]] = mapped_column(
-        "metadata", JSON, nullable=False, default=dict
+        "metadata", JsonObjectText(), nullable=False, default=dict
     )
 
     steps: Mapped[list["ExecutionStepModel"]] = relationship(
         "ExecutionStepModel",
         back_populates="execution",
+        primaryjoin="ExecutionModel.id == foreign(ExecutionStepModel.execution_id)",
         order_by="ExecutionStepModel.position",
         cascade="all, delete-orphan",
     )
