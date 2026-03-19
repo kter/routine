@@ -22,7 +22,11 @@ export function LoginScreen() {
 
   return (
     <AuthScreenFrame>
-      <LoginForm />
+      <LoginForm
+        form={screen.form}
+        error={screen.error}
+        onSubmit={screen.onSubmit}
+      />
     </AuthScreenFrame>
   );
 }
