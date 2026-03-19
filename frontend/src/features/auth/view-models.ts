@@ -5,6 +5,16 @@ export type GuestScreenState =
   | { status: "redirect"; to: string }
   | { status: "ready" };
 
+export interface AuthStateMessageViewModel {
+  title: string;
+  description: string;
+}
+
+export interface AuthPanelHeaderViewModel {
+  title: string;
+  eyebrow: string;
+}
+
 export function getGuestScreenState(
   authState: Pick<AuthState, "isLoading" | "isAuthenticated">,
   redirectTo = "/",
@@ -18,4 +28,33 @@ export function getGuestScreenState(
   }
 
   return { status: "ready" };
+}
+
+export function getAuthStateMessage(
+  kind: "login_loading" | "register_loading" | "protected_loading",
+): AuthStateMessageViewModel {
+  switch (kind) {
+    case "login_loading":
+      return {
+        title: "認証状態を確認中...",
+        description: "セッションの有効性を検証しています。",
+      };
+    case "register_loading":
+      return {
+        title: "認証状態を確認中...",
+        description: "サインアップ画面を準備しています。",
+      };
+    case "protected_loading":
+      return {
+        title: "認証状態を確認中...",
+        description: "アクセス権を検証しています。",
+      };
+  }
+}
+
+export function getRegisterScreenHeader(): AuthPanelHeaderViewModel {
+  return {
+    title: "アカウント作成",
+    eyebrow: "Cognito User Registration",
+  };
 }

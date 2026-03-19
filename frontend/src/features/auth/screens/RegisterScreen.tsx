@@ -1,18 +1,25 @@
 import { Navigate } from "react-router-dom";
+import { AuthPanelHeader } from "@/features/auth/components/AuthPanelHeader";
 import { AuthStateScreen } from "@/features/auth/components/AuthStateScreen";
 import { AuthScreenFrame } from "@/features/auth/components/AuthScreenFrame";
 import { RegisterConfirmForm } from "@/features/auth/components/RegisterConfirmForm";
 import { RegisterSignUpForm } from "@/features/auth/components/RegisterSignUpForm";
 import { useRegisterScreen } from "@/features/auth/hooks/useRegisterScreen";
+import {
+  getAuthStateMessage,
+  getRegisterScreenHeader,
+} from "@/features/auth/view-models";
 
 export function RegisterScreen() {
   const screen = useRegisterScreen();
+  const loadingMessage = getAuthStateMessage("register_loading");
+  const header = getRegisterScreenHeader();
 
   if (screen.status === "loading") {
     return (
       <AuthStateScreen
-        title="認証状態を確認中..."
-        description="サインアップ画面を準備しています。"
+        title={loadingMessage.title}
+        description={loadingMessage.description}
       />
     );
   }
@@ -24,20 +31,7 @@ export function RegisterScreen() {
   return (
     <AuthScreenFrame>
       <div>
-        <div className="mb-6 text-center">
-          <h2
-            className="font-brand text-lg tracking-tight"
-            style={{ color: "hsl(210 20% 90%)", fontWeight: 700 }}
-          >
-            アカウント作成
-          </h2>
-          <p
-            className="mt-1 font-mono-data text-[11px] tracking-wide"
-            style={{ color: "hsl(215 16% 38%)" }}
-          >
-            Cognito User Registration
-          </p>
-        </div>
+        <AuthPanelHeader title={header.title} eyebrow={header.eyebrow} />
 
         {screen.step === "signup" && (
           <RegisterSignUpForm

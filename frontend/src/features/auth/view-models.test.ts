@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getGuestScreenState } from "./view-models";
+import {
+  getAuthStateMessage,
+  getGuestScreenState,
+  getRegisterScreenHeader,
+} from "./view-models";
 
 describe("getGuestScreenState", () => {
   it("returns loading while auth state is resolving", () => {
@@ -30,5 +34,23 @@ describe("getGuestScreenState", () => {
         isAuthenticated: false,
       }),
     ).toEqual({ status: "ready" });
+  });
+});
+
+describe("getAuthStateMessage", () => {
+  it("returns the protected route loading copy", () => {
+    expect(getAuthStateMessage("protected_loading")).toEqual({
+      title: "認証状態を確認中...",
+      description: "アクセス権を検証しています。",
+    });
+  });
+});
+
+describe("getRegisterScreenHeader", () => {
+  it("returns the register heading copy", () => {
+    expect(getRegisterScreenHeader()).toEqual({
+      title: "アカウント作成",
+      eyebrow: "Cognito User Registration",
+    });
   });
 });
