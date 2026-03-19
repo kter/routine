@@ -1,14 +1,13 @@
 import { Navigate } from "react-router-dom";
-import { AuthPanelHeader } from "@/features/auth/components/AuthPanelHeader";
-import { AuthStateScreen } from "@/features/auth/components/AuthStateScreen";
-import { AuthScreenFrame } from "@/features/auth/components/AuthScreenFrame";
-import { RegisterConfirmForm } from "@/features/auth/components/RegisterConfirmForm";
-import { RegisterSignUpForm } from "@/features/auth/components/RegisterSignUpForm";
-import { useRegisterScreen } from "@/features/auth/hooks/useRegisterScreen";
 import {
-  getAuthStateMessage,
-  getRegisterScreenHeader,
-} from "@/features/auth/view-models";
+  AuthPanelHeader,
+  AuthScreenFrame,
+  AuthStateScreen,
+  RegisterConfirmForm,
+  RegisterSignUpForm,
+} from "../components";
+import { useRegisterScreen } from "../hooks";
+import { getAuthStateMessage, getRegisterScreenHeader } from "../view-models";
 
 export function RegisterScreen() {
   const screen = useRegisterScreen();

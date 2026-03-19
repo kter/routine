@@ -1,9 +1,7 @@
 import { Navigate } from "react-router-dom";
-import { AuthStateScreen } from "@/features/auth/components/AuthStateScreen";
-import { AuthScreenFrame } from "@/features/auth/components/AuthScreenFrame";
-import { LoginForm } from "@/features/auth/components/LoginForm";
-import { useLoginScreen } from "@/features/auth/hooks/useLoginScreen";
-import { getAuthStateMessage } from "@/features/auth/view-models";
+import { AuthScreenFrame, AuthStateScreen, LoginForm } from "../components";
+import { useLoginScreen } from "../hooks";
+import { getAuthStateMessage } from "../view-models";
 
 export function LoginScreen() {
   const screen = useLoginScreen();

@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/layout/AppShell";
-import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { ProtectedRoute } from "@/features/auth";
 import { createAppRouter } from "@/lib/monitoring/sentry";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
