@@ -1,4 +1,4 @@
-"""Unit tests for ExecutionUsecases - step completion logic."""
+"""Unit tests for ExecutionService - step completion logic."""
 
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
@@ -7,13 +7,13 @@ from uuid import UUID, uuid4
 import pytest
 
 from routineops.app.request_context import RequestContext
+from routineops.application.executions import ExecutionService
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
 from routineops.domain.value_objects.execution_status import ExecutionStatus, StepStatus
-from routineops.usecases.execution_usecases import ExecutionUsecases
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 USER_SUB = "user-sub-123"
@@ -136,19 +136,19 @@ def request_context() -> RequestContext:
 
 
 @pytest.fixture
-def usecases(
+def service(
     mock_exec_repo: MagicMock,
     mock_task_repo: MagicMock,
     mock_storage: MagicMock,
     request_context: RequestContext,
-) -> ExecutionUsecases:
-    return ExecutionUsecases(mock_exec_repo, mock_task_repo, mock_storage, request_context)
+) -> ExecutionService:
+    return ExecutionService(mock_exec_repo, mock_task_repo, mock_storage, request_context)
 
 
 class TestStartExecution:
     def test_creates_execution_with_step_snapshots(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
         mock_task_repo: MagicMock,
     ) -> None:
@@ -163,7 +163,7 @@ class TestStartExecution:
         exec_step = make_exec_step(execution.id, step_id=step.id)
         mock_exec_repo.create_step.return_value = exec_step
 
-        result = usecases.start_execution(task_id)
+        result = service.start_execution(task_id)
 
         mock_exec_repo.create.assert_called_once()
         mock_exec_repo.create_step.assert_called_once()
@@ -171,17 +171,17 @@ class TestStartExecution:
 
     def test_raises_not_found_when_task_missing(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_task_repo: MagicMock,
     ) -> None:
         mock_task_repo.get_with_steps.return_value = None
 
         with pytest.raises(NotFoundError, match="Task"):
-            usecases.start_execution(uuid4())
+            service.start_execution(uuid4())
 
     def test_raises_validation_for_inactive_task(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_task_repo: MagicMock,
     ) -> None:
         task = make_task()
@@ -189,13 +189,13 @@ class TestStartExecution:
         mock_task_repo.get_with_steps.return_value = task
 
         with pytest.raises(ValidationError, match="not active"):
-            usecases.start_execution(task.id)
+            service.start_execution(task.id)
 
 
 class TestCompleteStep:
     def test_completes_step_without_evidence(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -208,7 +208,7 @@ class TestCompleteStep:
         )
         mock_exec_repo.update_step.return_value = completed_step
 
-        result = usecases.complete_step(execution.id, exec_step.id)
+        result = service.complete_step(execution.id, exec_step.id)
 
         assert result == completed_step
         assert mock_exec_repo.update_step.called
@@ -218,7 +218,7 @@ class TestCompleteStep:
 
     def test_requires_evidence_text_when_evidence_type_is_text(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -227,7 +227,7 @@ class TestCompleteStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="Evidence text is required"):
-            usecases.complete_step(
+            service.complete_step(
                 execution.id,
                 exec_step.id,
                 evidence_text=None,
@@ -235,7 +235,7 @@ class TestCompleteStep:
 
     def test_cannot_complete_already_completed_step(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -244,13 +244,13 @@ class TestCompleteStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="already"):
-            usecases.complete_step(execution.id, exec_step.id)
+            service.complete_step(execution.id, exec_step.id)
 
 
 class TestCompleteExecution:
     def test_completes_when_all_required_steps_done(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -261,7 +261,7 @@ class TestCompleteExecution:
         completed_exec = make_execution(status=ExecutionStatus.COMPLETED)
         mock_exec_repo.update.return_value = completed_exec
 
-        result = usecases.complete_execution(execution.id)
+        result = service.complete_execution(execution.id)
 
         assert result == completed_exec
         call_arg = mock_exec_repo.update.call_args[0][0]
@@ -269,7 +269,7 @@ class TestCompleteExecution:
 
     def test_raises_when_required_step_pending(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -278,13 +278,13 @@ class TestCompleteExecution:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="required step"):
-            usecases.complete_execution(execution.id)
+            service.complete_execution(execution.id)
 
 
 class TestSkipStep:
     def test_skips_optional_step(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -297,14 +297,14 @@ class TestSkipStep:
         )
         mock_exec_repo.update_step.return_value = skipped_step
 
-        usecases.skip_step(execution.id, exec_step.id)
+        service.skip_step(execution.id, exec_step.id)
 
         call_arg = mock_exec_repo.update_step.call_args[0][0]
         assert call_arg.status == StepStatus.SKIPPED
 
     def test_cannot_skip_required_step(
         self,
-        usecases: ExecutionUsecases,
+        service: ExecutionService,
         mock_exec_repo: MagicMock,
     ) -> None:
         execution = make_execution()
@@ -313,4 +313,4 @@ class TestSkipStep:
         mock_exec_repo.get_with_steps.return_value = execution
 
         with pytest.raises(ValidationError, match="Cannot skip a required step"):
-            usecases.skip_step(execution.id, exec_step.id)
+            service.skip_step(execution.id, exec_step.id)

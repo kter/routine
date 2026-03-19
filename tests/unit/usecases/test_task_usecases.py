@@ -1,4 +1,4 @@
-"""Unit tests for TaskUsecases with mocked repository."""
+"""Unit tests for TaskService with mocked repository."""
 
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
@@ -7,12 +7,11 @@ from uuid import UUID, uuid4
 import pytest
 
 from routineops.app.request_context import RequestContext
+from routineops.application.tasks import TaskRepositoryPort, TaskService
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
-from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
-from routineops.usecases.task_usecases import TaskUsecases
 
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000001")
 USER_SUB = "user-sub-123"
@@ -71,53 +70,51 @@ def request_context() -> RequestContext:
 
 
 @pytest.fixture
-def usecases(mock_repo: MagicMock, request_context: RequestContext) -> TaskUsecases:
-    return TaskUsecases(mock_repo, request_context)
+def service(mock_repo: MagicMock, request_context: RequestContext) -> TaskService:
+    return TaskService(mock_repo, request_context)
 
 
 class TestListTasks:
-    def test_delegates_to_repo(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
+    def test_delegates_to_repo(self, service: TaskService, mock_repo: MagicMock) -> None:
         task = make_task()
         mock_repo.list.return_value = [task]
 
-        result = usecases.list_tasks()
+        result = service.list_tasks()
 
         mock_repo.list.assert_called_once_with(active_only=False)
         assert result == [task]
 
-    def test_active_only_flag(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
+    def test_active_only_flag(self, service: TaskService, mock_repo: MagicMock) -> None:
         mock_repo.list.return_value = []
-        usecases.list_tasks(active_only=True)
+        service.list_tasks(active_only=True)
         mock_repo.list.assert_called_once_with(active_only=True)
 
 
 class TestGetTask:
-    def test_returns_task_when_found(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
+    def test_returns_task_when_found(self, service: TaskService, mock_repo: MagicMock) -> None:
         task = make_task()
         mock_repo.get_with_steps.return_value = task
 
-        result = usecases.get_task(task.id)
+        result = service.get_task(task.id)
 
         assert result == task
 
     def test_raises_not_found_when_missing(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         mock_repo.get_with_steps.return_value = None
         task_id = uuid4()
 
         with pytest.raises(NotFoundError, match="Task"):
-            usecases.get_task(task_id)
+            service.get_task(task_id)
 
 
 class TestCreateTask:
-    def test_creates_task_with_valid_cron(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
-    ) -> None:
+    def test_creates_task_with_valid_cron(self, service: TaskService, mock_repo: MagicMock) -> None:
         task = make_task()
         mock_repo.create.return_value = task
 
-        result = usecases.create_task(
+        result = service.create_task(
             title="月次パッチ",
             cron_expression="0 10 1 * *",
         )
@@ -126,20 +123,18 @@ class TestCreateTask:
         assert result == task
 
     def test_raises_validation_for_invalid_cron(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         with pytest.raises(ValidationError):
-            usecases.create_task(
+            service.create_task(
                 title="Test",
                 cron_expression="invalid",
             )
 
-    def test_creates_steps_when_provided(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
-    ) -> None:
+    def test_creates_steps_when_provided(self, service: TaskService, mock_repo: MagicMock) -> None:
         mock_repo.create.side_effect = lambda created_task: created_task
 
-        result = usecases.create_task(
+        result = service.create_task(
             title="テストタスク",
             cron_expression="0 10 * * *",
             steps=[{"position": 1, "title": "確認ステップ"}],
@@ -154,11 +149,11 @@ class TestCreateTask:
         assert result.steps == created_task.steps
 
     def test_uses_single_create_repository_api_for_steps(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         mock_repo.create.side_effect = lambda created_task: created_task
 
-        usecases.create_task(
+        service.create_task(
             title="集約作成タスク",
             cron_expression="0 10 * * *",
             steps=[{"position": 1, "title": "集約手順"}],
@@ -167,11 +162,11 @@ class TestCreateTask:
         mock_repo.create.assert_called_once()
 
     def test_normalizes_blank_timezone_to_asia_tokyo(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         mock_repo.create.side_effect = lambda created_task: created_task
 
-        result = usecases.create_task(
+        result = service.create_task(
             title="timezone test",
             cron_expression="0 10 * * *",
             timezone="",
@@ -181,26 +176,26 @@ class TestCreateTask:
 
 
 class TestDeleteTask:
-    def test_deletes_existing_task(self, usecases: TaskUsecases, mock_repo: MagicMock) -> None:
+    def test_deletes_existing_task(self, service: TaskService, mock_repo: MagicMock) -> None:
         task = make_task()
         mock_repo.get.return_value = task
 
-        usecases.delete_task(task.id)
+        service.delete_task(task.id)
 
         mock_repo.delete.assert_called_once_with(task.id)
 
     def test_raises_not_found_for_missing_task(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         mock_repo.get.return_value = None
 
         with pytest.raises(NotFoundError):
-            usecases.delete_task(uuid4())
+            service.delete_task(uuid4())
 
 
 class TestUpdateTask:
     def test_distinguishes_omitted_steps_from_explicit_empty_list(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         kept_task = make_task()
         kept_step = make_step(kept_task.id, title="保持対象")
@@ -212,8 +207,8 @@ class TestUpdateTask:
         mock_repo.get_with_steps.side_effect = [kept_task, cleared_task]
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        kept_result = usecases.update_task(kept_task.id, title="手順は保持")
-        cleared_result = usecases.update_task(cleared_task.id, steps=[])
+        kept_result = service.update_task(kept_task.id, title="手順は保持")
+        cleared_result = service.update_task(cleared_task.id, steps=[])
 
         kept_update = mock_repo.update.call_args_list[0].args[0]
         cleared_update = mock_repo.update.call_args_list[1].args[0]
@@ -224,7 +219,7 @@ class TestUpdateTask:
         assert cleared_result.steps == []
 
     def test_keeps_existing_steps_when_steps_are_not_provided(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         existing_step = make_step(
@@ -236,7 +231,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(task.id, title="更新後タイトル")
+        result = service.update_task(task.id, title="更新後タイトル")
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.title == "更新後タイトル"
@@ -244,7 +239,7 @@ class TestUpdateTask:
         assert result.steps == [existing_step]
 
     def test_replaces_steps_with_domain_entities_when_steps_are_provided(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         task.steps = [make_step(task.id, title="旧手順")]
@@ -260,7 +255,7 @@ class TestUpdateTask:
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.return_value = replaced_task
 
-        result = usecases.update_task(
+        result = service.update_task(
             task.id,
             steps=[
                 {
@@ -285,38 +280,38 @@ class TestUpdateTask:
         assert result.steps == [persisted_step]
 
     def test_normalizes_blank_timezone_on_update(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(task.id, timezone="")
+        result = service.update_task(task.id, timezone="")
 
         assert result.timezone == "Asia/Tokyo"
 
     def test_clears_steps_when_empty_list_is_provided(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         task.steps = [make_step(task.id)]
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(task.id, steps=[])
+        result = service.update_task(task.id, steps=[])
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.steps == []
         assert result.steps == []
 
     def test_uses_same_step_defaults_when_updating(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(task.id, steps=[{"position": 1, "title": "既定値テスト"}])
+        result = service.update_task(task.id, steps=[{"position": 1, "title": "既定値テスト"}])
 
         updated_task = mock_repo.update.call_args.args[0]
         assert updated_task.steps[0].instruction == ""
@@ -325,14 +320,14 @@ class TestUpdateTask:
         assert result.steps[0].title == "既定値テスト"
 
     def test_uses_single_update_repository_api_when_steps_change(
-        self, usecases: TaskUsecases, mock_repo: MagicMock
+        self, service: TaskService, mock_repo: MagicMock
     ) -> None:
         task = make_task()
         task.steps = [make_step(task.id, title="旧手順")]
         mock_repo.get_with_steps.return_value = task
         mock_repo.update.side_effect = lambda updated_task: updated_task
 
-        result = usecases.update_task(task.id, steps=[{"position": 1, "title": "新手順"}])
+        result = service.update_task(task.id, steps=[{"position": 1, "title": "新手順"}])
 
         mock_repo.update.assert_called_once()
         assert result.steps[0].title == "新手順"
