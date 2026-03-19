@@ -1,7 +1,7 @@
 import boto3
 
+from routineops.application.shared.ports import StoragePort
 from routineops.config.settings import get_api_settings
-from routineops.usecases.interfaces.storage_port import StoragePort
 
 
 class S3StorageImpl(StoragePort):

@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from routineops.application.executions.ports import ExecutionRepositoryPort
 from routineops.application.services.schedule_service import get_occurrences, resolve_task_timezone
+from routineops.application.tasks.ports import TaskRepositoryPort
 from routineops.domain.entities.execution import Execution
 from routineops.domain.value_objects.execution_status import ExecutionStatus
-from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
-from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 
 
 @dataclass

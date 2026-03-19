@@ -15,12 +15,12 @@ from routineops.application.container import (
     build_storage,
     build_task_usecases,
 )
+from routineops.application.dashboard import DashboardService
+from routineops.application.executions import ExecutionService
+from routineops.application.tasks import TaskService
 from routineops.config.settings import get_api_settings
 from routineops.infrastructure.db.session import get_db
 from routineops.infrastructure.storage.s3_storage import S3StorageImpl
-from routineops.usecases.dashboard_usecases import DashboardUsecases
-from routineops.usecases.execution_usecases import ExecutionUsecases
-from routineops.usecases.task_usecases import TaskUsecases
 
 security = HTTPBearer()
 
@@ -76,7 +76,7 @@ def get_storage() -> S3StorageImpl:
     return build_storage(bucket_name=settings.evidence_bucket_name)
 
 
-def get_task_usecases(context: RequestContextDep, db: DbDep) -> TaskUsecases:
+def get_task_usecases(context: RequestContextDep, db: DbDep) -> TaskService:
     return build_task_usecases(db=db, context=context)
 
 
@@ -84,9 +84,9 @@ def get_execution_usecases(
     context: RequestContextDep,
     db: DbDep,
     storage: Annotated[S3StorageImpl, Depends(get_storage)],
-) -> ExecutionUsecases:
+) -> ExecutionService:
     return build_execution_usecases(db=db, context=context, storage=storage)
 
 
-def get_dashboard_usecases(context: RequestContextDep, db: DbDep) -> DashboardUsecases:
+def get_dashboard_usecases(context: RequestContextDep, db: DbDep) -> DashboardService:
     return build_dashboard_usecases(db=db, context=context)

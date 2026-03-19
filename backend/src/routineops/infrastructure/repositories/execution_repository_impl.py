@@ -5,13 +5,13 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from routineops.application.executions.ports import ExecutionRepositoryPort
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.value_objects.execution_status import ExecutionStatus, StepStatus
 from routineops.infrastructure.db.dsql_compat import decode_json_object
 from routineops.infrastructure.db.models.execution_model import ExecutionModel
 from routineops.infrastructure.db.models.execution_step_model import ExecutionStepModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
-from routineops.usecases.interfaces.execution_repository import ExecutionRepositoryPort
 
 
 class ExecutionRepositoryImpl(BaseRepository, ExecutionRepositoryPort):

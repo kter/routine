@@ -4,6 +4,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from routineops.application.tasks.ports import TaskRepositoryPort
 from routineops.domain.entities.task import Step, Task
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
@@ -11,7 +12,6 @@ from routineops.infrastructure.db.dsql_compat import decode_json_array, decode_j
 from routineops.infrastructure.db.models.step_model import StepModel
 from routineops.infrastructure.db.models.task_model import TaskModel
 from routineops.infrastructure.repositories.base_repository import BaseRepository
-from routineops.usecases.interfaces.task_repository import TaskRepositoryPort
 
 
 class TaskRepositoryImpl(BaseRepository, TaskRepositoryPort):

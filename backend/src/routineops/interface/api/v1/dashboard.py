@@ -2,17 +2,17 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from routineops.application.dashboard import DashboardService
 from routineops.interface.api.deps import RequestContextDep, get_dashboard_usecases
 from routineops.interface.schemas.dashboard import DashboardResponse, DashboardTaskItem
-from routineops.usecases.dashboard_usecases import DashboardUsecases
 
 router = APIRouter()
-DashboardUsecasesDep = Annotated[DashboardUsecases, Depends(get_dashboard_usecases)]
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_usecases)]
 
 
 @router.get("", response_model=DashboardResponse)
-def get_dashboard(_context: RequestContextDep, usecases: DashboardUsecasesDep) -> DashboardResponse:
-    data = usecases.get_dashboard()
+def get_dashboard(_context: RequestContextDep, service: DashboardServiceDep) -> DashboardResponse:
+    data = service.get_dashboard()
     return DashboardResponse(
         today=[
             DashboardTaskItem(
