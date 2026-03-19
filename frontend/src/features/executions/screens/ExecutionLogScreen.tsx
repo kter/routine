@@ -1,12 +1,11 @@
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, MinusCircle, Circle } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { useExecution } from "@/features/executions/hooks/useExecution";
+import { useExecutionLogScreen } from "@/features/executions/hooks/useExecutionLogScreen";
 import { formatDate } from "@/lib/utils";
 
 export function ExecutionLogScreen() {
-  const { id } = useParams<{ id: string }>();
-  const { execution, isLoading, error } = useExecution(id!);
+  const { execution, isLoading, error } = useExecutionLogScreen();
 
   if (isLoading) {
     return (

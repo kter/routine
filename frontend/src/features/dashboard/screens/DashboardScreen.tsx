@@ -1,19 +1,11 @@
-import { useNavigate } from "react-router-dom";
 import { TodayTasksPanel } from "@/features/dashboard/components/TodayTasksPanel";
 import { OverduePanel } from "@/features/dashboard/components/OverduePanel";
 import { UpcomingPanel } from "@/features/dashboard/components/UpcomingPanel";
-import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
-import { useStartExecution } from "@/features/executions/hooks/useExecution";
+import { useDashboardScreen } from "@/features/dashboard/hooks/useDashboardScreen";
 
 export function DashboardScreen() {
-  const { data, isLoading, error, refetch } = useDashboard();
-  const { startExecution } = useStartExecution();
-  const navigate = useNavigate();
-
-  const handleStartExecution = async (taskId: string) => {
-    const execution = await startExecution(taskId);
-    navigate(`/executions/${execution.id}`);
-  };
+  const { data, isLoading, error, retry, dateLabel, handleStartExecution } =
+    useDashboardScreen();
 
   if (isLoading) {
     return (
@@ -38,7 +30,7 @@ export function DashboardScreen() {
           ERR: データの取得に失敗しました
         </p>
         <button
-          onClick={() => refetch()}
+          onClick={retry}
           className="font-mono-data text-xs hover:underline"
           style={{ color: "hsl(43 96% 56%)" }}
         >
@@ -61,12 +53,7 @@ export function DashboardScreen() {
           className="font-mono-data text-[11px]"
           style={{ color: "hsl(215 16% 36%)" }}
         >
-          {new Date().toLocaleDateString("ja-JP", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "short",
-          })}
+          {dateLabel}
         </span>
       </div>
 

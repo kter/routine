@@ -1,31 +1,23 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Edit, Play, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { useStartExecution } from "@/features/executions/hooks/useExecution";
-import { useTaskMutations } from "@/features/tasks/hooks/useTaskMutations";
-import { useTask } from "@/features/tasks/hooks/useTasks";
+import { useTaskDetailScreen } from "@/features/tasks/hooks/useTaskDetailScreen";
 import { formatCron } from "@/lib/utils";
 
 export function TaskDetailScreen() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { task, isLoading, error } = useTask(id!);
-  const { deleteTask } = useTaskMutations();
-  const { startExecution } = useStartExecution();
-  const [showDelete, setShowDelete] = useState(false);
-
-  const handleDelete = async () => {
-    await deleteTask(id!);
-    navigate("/tasks");
-  };
-
-  const handleStartExecution = async () => {
-    const execution = await startExecution(id!);
-    navigate(`/executions/${execution.id}`);
-  };
+  const {
+    taskId,
+    task,
+    isLoading,
+    error,
+    showDelete,
+    openDeleteDialog,
+    closeDeleteDialog,
+    handleDelete,
+    handleStartExecution,
+  } = useTaskDetailScreen();
 
   if (isLoading)
     return <div className="text-sm text-muted-foreground">読み込み中...</div>;
@@ -55,14 +47,14 @@ export function TaskDetailScreen() {
             実行
           </button>
           <Link
-            to={`/tasks/${id}/edit`}
+            to={`/tasks/${taskId}/edit`}
             className="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-accent"
           >
             <Edit className="h-4 w-4" />
             編集
           </Link>
           <button
-            onClick={() => setShowDelete(true)}
+            onClick={openDeleteDialog}
             className="flex items-center gap-1.5 rounded-md border border-destructive px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
@@ -127,7 +119,7 @@ export function TaskDetailScreen() {
         description={`「${task.title}」を削除します。この操作は取り消せません。`}
         confirmLabel="削除"
         onConfirm={handleDelete}
-        onCancel={() => setShowDelete(false)}
+        onCancel={closeDeleteDialog}
         destructive
       />
     </div>

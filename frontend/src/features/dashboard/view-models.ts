@@ -26,3 +26,12 @@ export function toDashboardTaskViewModel(
     canStart: !task.status,
   };
 }
+
+export function formatDashboardDateLabel(now: Date = new Date()): string {
+  return now.toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+}

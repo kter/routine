@@ -1,10 +1,9 @@
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { ExecutionWizard } from "@/features/executions/components/ExecutionWizard";
-import { useExecution } from "@/features/executions/hooks/useExecution";
+import { useExecutionScreen } from "@/features/executions/hooks/useExecutionScreen";
 
 export function ExecutionScreen() {
-  const { id } = useParams<{ id: string }>();
   const {
     execution,
     isLoading,
@@ -13,7 +12,7 @@ export function ExecutionScreen() {
     skipStep,
     completeExecution,
     abandonExecution,
-  } = useExecution(id!);
+  } = useExecutionScreen();
 
   if (isLoading) {
     return (

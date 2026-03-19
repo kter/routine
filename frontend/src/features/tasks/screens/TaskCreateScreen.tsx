@@ -1,16 +1,8 @@
-import { useNavigate } from "react-router-dom";
 import { TaskForm } from "@/features/tasks/components/TaskForm";
-import { useTaskMutations } from "@/features/tasks/hooks/useTaskMutations";
-import type { TaskInput } from "@/features/tasks/types";
+import { useTaskCreateScreen } from "@/features/tasks/hooks/useTaskCreateScreen";
 
 export function TaskCreateScreen() {
-  const navigate = useNavigate();
-  const { createTask } = useTaskMutations();
-
-  const handleSubmit = async (data: TaskInput) => {
-    const task = await createTask(data);
-    navigate(`/tasks/${task.id}`);
-  };
+  const { handleSubmit } = useTaskCreateScreen();
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
