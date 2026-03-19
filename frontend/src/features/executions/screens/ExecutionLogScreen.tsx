@@ -2,12 +2,10 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, MinusCircle, Circle } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { useExecutionLogScreen } from "@/features/executions/hooks/useExecutionLogScreen";
-import { formatDate } from "@/lib/utils";
-
 export function ExecutionLogScreen() {
-  const { execution, isLoading, error } = useExecutionLogScreen();
+  const screen = useExecutionLogScreen();
 
-  if (isLoading) {
+  if (screen.status === "loading") {
     return (
       <div className="mx-auto max-w-2xl space-y-4 animate-fade-up">
         <div className="h-5 w-32 rounded shimmer" />
@@ -21,7 +19,7 @@ export function ExecutionLogScreen() {
     );
   }
 
-  if (error || !execution) {
+  if (screen.status === "not_found") {
     return (
       <div className="flex h-64 items-center justify-center">
         <p
@@ -56,7 +54,7 @@ export function ExecutionLogScreen() {
           className="font-brand text-lg font-700 tracking-tight"
           style={{ fontWeight: 700 }}
         >
-          実行ログ
+          {screen.viewModel.title}
         </h1>
       </div>
 
@@ -65,19 +63,14 @@ export function ExecutionLogScreen() {
         style={{
           background: "hsl(220 40% 8%)",
           border: "1px solid hsl(218 28% 16%)",
-          borderLeft:
-            execution.status === "completed"
-              ? "3px solid hsl(160 60% 45%)"
-              : execution.status === "abandoned"
-                ? "3px solid hsl(0 72% 54%)"
-                : "3px solid hsl(43 96% 56%)",
+          borderLeft: screen.viewModel.statusBorderColor,
         }}
       >
         <div className="flex items-start justify-between gap-3">
           <p className="font-medium" style={{ color: "hsl(210 20% 88%)" }}>
-            {execution.taskTitle}
+            {screen.viewModel.title}
           </p>
-          <StatusBadge status={execution.status} />
+          <StatusBadge status={screen.viewModel.status} />
         </div>
 
         <div className="flex flex-wrap gap-x-5 gap-y-1">
@@ -85,32 +78,32 @@ export function ExecutionLogScreen() {
             className="font-mono-data text-[11px]"
             style={{ color: "hsl(215 16% 40%)" }}
           >
-            開始: {formatDate(execution.startedAt)}
+            {screen.viewModel.startedLabel}
           </span>
-          {execution.completedAt && (
+          {screen.viewModel.completedLabel && (
             <span
               className="font-mono-data text-[11px]"
               style={{ color: "hsl(215 16% 40%)" }}
             >
-              完了: {formatDate(execution.completedAt)}
+              {screen.viewModel.completedLabel}
             </span>
           )}
-          {execution.durationSeconds != null && (
+          {screen.viewModel.durationLabel && (
             <span
               className="font-mono-data text-[11px]"
               style={{ color: "hsl(215 16% 36%)" }}
             >
-              {Math.ceil(execution.durationSeconds / 60)}分
+              {screen.viewModel.durationLabel}
             </span>
           )}
         </div>
 
-        {execution.notes && (
+        {screen.viewModel.notes && (
           <p
             className="text-sm leading-relaxed"
             style={{ color: "hsl(215 16% 48%)" }}
           >
-            {execution.notes}
+            {screen.viewModel.notes}
           </p>
         )}
       </div>
@@ -120,11 +113,11 @@ export function ExecutionLogScreen() {
           className="mb-3 font-mono-data text-[11px] tracking-widest uppercase"
           style={{ color: "hsl(215 16% 36%)" }}
         >
-          Step Log — {execution.steps.length} steps
+          {screen.viewModel.stepHeading}
         </h2>
 
         <div className="space-y-1.5">
-          {execution.steps.map((step, i) => {
+          {screen.viewModel.steps.map((step, i) => {
             const isCompleted = step.status === "completed";
             const isSkipped = step.status === "skipped";
 
@@ -168,9 +161,9 @@ export function ExecutionLogScreen() {
                             : "hsl(215 16% 50%)",
                         }}
                       >
-                        {step.stepSnapshot.title}
+                        {step.title}
                       </p>
-                      {isSkipped && (
+                      {step.skippedLabel && (
                         <span
                           className="shrink-0 font-mono-data text-[10px] rounded px-1.5 py-0.5 uppercase"
                           style={{
@@ -179,7 +172,7 @@ export function ExecutionLogScreen() {
                             border: "1px solid hsl(32 60% 16%)",
                           }}
                         >
-                          Skip
+                          {step.skippedLabel}
                         </span>
                       )}
                     </div>
@@ -201,12 +194,12 @@ export function ExecutionLogScreen() {
                       </div>
                     )}
 
-                    {step.completedAt && (
+                    {step.completedLabel && (
                       <p
                         className="mt-1.5 font-mono-data text-[10px]"
                         style={{ color: "hsl(215 16% 32%)" }}
                       >
-                        {formatDate(step.completedAt)} · {step.completedBy}
+                        {step.completedLabel}
                       </p>
                     )}
                   </div>

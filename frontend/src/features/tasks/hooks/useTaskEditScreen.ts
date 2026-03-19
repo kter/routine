@@ -16,12 +16,17 @@ export function useTaskEditScreen() {
     navigate(`/tasks/${taskId}`);
   };
 
+  if (isLoading) {
+    return { status: "loading" as const };
+  }
+
+  if (error || !task) {
+    return { status: "not_found" as const };
+  }
+
   return {
-    task: task ?? null,
-    taskId,
-    isLoading,
-    error,
-    form: task ? toTaskFormViewModel(task) : null,
+    status: "ready" as const,
+    form: toTaskFormViewModel(task),
     handleSubmit,
   };
 }

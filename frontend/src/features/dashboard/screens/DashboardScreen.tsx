@@ -4,10 +4,9 @@ import { UpcomingPanel } from "@/features/dashboard/components/UpcomingPanel";
 import { useDashboardScreen } from "@/features/dashboard/hooks/useDashboardScreen";
 
 export function DashboardScreen() {
-  const { data, isLoading, error, retry, dateLabel, handleStartExecution } =
-    useDashboardScreen();
+  const screen = useDashboardScreen();
 
-  if (isLoading) {
+  if (screen.status === "loading") {
     return (
       <div className="space-y-4 animate-fade-up">
         <div className="h-5 w-32 rounded shimmer" />
@@ -20,7 +19,7 @@ export function DashboardScreen() {
     );
   }
 
-  if (error || !data) {
+  if (screen.status === "error") {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
         <p
@@ -30,7 +29,7 @@ export function DashboardScreen() {
           ERR: データの取得に失敗しました
         </p>
         <button
-          onClick={retry}
+          onClick={screen.retry}
           className="font-mono-data text-xs hover:underline"
           style={{ color: "hsl(43 96% 56%)" }}
         >
@@ -53,21 +52,21 @@ export function DashboardScreen() {
           className="font-mono-data text-[11px]"
           style={{ color: "hsl(215 16% 36%)" }}
         >
-          {dateLabel}
+          {screen.dateLabel}
         </span>
       </div>
 
       <OverduePanel
-        tasks={data.overdue}
-        onStartExecution={handleStartExecution}
+        tasks={screen.data.overdue}
+        onStartExecution={screen.handleStartExecution}
       />
 
       <div className="flex gap-4">
         <TodayTasksPanel
-          tasks={data.today}
-          onStartExecution={handleStartExecution}
+          tasks={screen.data.today}
+          onStartExecution={screen.handleStartExecution}
         />
-        <UpcomingPanel tasks={data.upcoming} />
+        <UpcomingPanel tasks={screen.data.upcoming} />
       </div>
     </div>
   );

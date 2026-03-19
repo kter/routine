@@ -4,17 +4,9 @@ import { ExecutionWizard } from "@/features/executions/components/ExecutionWizar
 import { useExecutionScreen } from "@/features/executions/hooks/useExecutionScreen";
 
 export function ExecutionScreen() {
-  const {
-    execution,
-    isLoading,
-    error,
-    completeStep,
-    skipStep,
-    completeExecution,
-    abandonExecution,
-  } = useExecutionScreen();
+  const screen = useExecutionScreen();
 
-  if (isLoading) {
+  if (screen.status === "loading") {
     return (
       <div className="mx-auto max-w-2xl space-y-4 animate-fade-up">
         <div className="h-5 w-48 rounded shimmer" />
@@ -24,7 +16,7 @@ export function ExecutionScreen() {
     );
   }
 
-  if (error || !execution) {
+  if (screen.status === "not_found") {
     return (
       <div className="flex h-64 items-center justify-center">
         <p
@@ -59,15 +51,15 @@ export function ExecutionScreen() {
           className="font-brand text-lg font-700 tracking-tight"
           style={{ fontWeight: 700 }}
         >
-          {execution.taskTitle ?? "タスク実行"}
+          {screen.title}
         </h1>
       </div>
       <ExecutionWizard
-        execution={execution}
-        onCompleteStep={completeStep}
-        onSkipStep={skipStep}
-        onComplete={completeExecution}
-        onAbandon={abandonExecution}
+        execution={screen.execution}
+        onCompleteStep={screen.completeStep}
+        onSkipStep={screen.skipStep}
+        onComplete={screen.completeExecution}
+        onAbandon={screen.abandonExecution}
       />
     </div>
   );

@@ -13,11 +13,20 @@ export function useDashboardScreen() {
     navigate(`/executions/${execution.id}`);
   };
 
+  if (isLoading) {
+    return { status: "loading" as const };
+  }
+
+  if (error || !data) {
+    return {
+      status: "error" as const,
+      retry: () => refetch(),
+    };
+  }
+
   return {
+    status: "ready" as const,
     data,
-    isLoading,
-    error,
-    retry: () => refetch(),
     dateLabel: formatDashboardDateLabel(),
     handleStartExecution,
   };

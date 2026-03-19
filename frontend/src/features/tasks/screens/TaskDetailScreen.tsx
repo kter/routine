@@ -4,24 +4,12 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { useTaskDetailScreen } from "@/features/tasks/hooks/useTaskDetailScreen";
-import { formatCron } from "@/lib/utils";
-
 export function TaskDetailScreen() {
-  const {
-    taskId,
-    task,
-    isLoading,
-    error,
-    showDelete,
-    openDeleteDialog,
-    closeDeleteDialog,
-    handleDelete,
-    handleStartExecution,
-  } = useTaskDetailScreen();
+  const screen = useTaskDetailScreen();
 
-  if (isLoading)
+  if (screen.status === "loading")
     return <div className="text-sm text-muted-foreground">読み込み中...</div>;
-  if (error || !task)
+  if (screen.status === "not_found")
     return (
       <div className="text-sm text-destructive">タスクが見つかりません</div>
     );
@@ -30,31 +18,31 @@ export function TaskDetailScreen() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold">{task.title}</h1>
+          <h1 className="text-xl font-semibold">{screen.viewModel.title}</h1>
           <div className="mt-1 flex items-center gap-2">
-            <StatusBadge status={task.isActive ? "completed" : "abandoned"} />
+            <StatusBadge status={screen.viewModel.status} />
             <span className="text-sm text-muted-foreground">
-              {formatCron(task.cronExpression)}
+              {screen.viewModel.scheduleLabel}
             </span>
           </div>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleStartExecution}
+            onClick={screen.handleStartExecution}
             className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
           >
             <Play className="h-4 w-4" />
             実行
           </button>
           <Link
-            to={`/tasks/${taskId}/edit`}
+            to={screen.viewModel.editHref}
             className="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-accent"
           >
             <Edit className="h-4 w-4" />
             編集
           </Link>
           <button
-            onClick={openDeleteDialog}
+            onClick={screen.openDeleteDialog}
             className="flex items-center gap-1.5 rounded-md border border-destructive px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-4 w-4" />
@@ -62,9 +50,9 @@ export function TaskDetailScreen() {
         </div>
       </div>
 
-      {task.description && (
+      {screen.task.description && (
         <div className="rounded-lg border bg-card p-4">
-          <MarkdownRenderer content={task.description} />
+          <MarkdownRenderer content={screen.task.description} />
         </div>
       )}
 
@@ -72,34 +60,38 @@ export function TaskDetailScreen() {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">タイムゾーン:</span>
-            <span className="ml-2">{task.timezone}</span>
+            <span className="ml-2">{screen.viewModel.timezoneLabel}</span>
           </div>
           <div>
             <span className="text-muted-foreground">想定時間:</span>
-            <span className="ml-2">{task.estimatedMinutes}分</span>
+            <span className="ml-2">
+              {screen.viewModel.estimatedMinutesLabel}
+            </span>
           </div>
-          {task.tags.length > 0 && (
+          {screen.viewModel.tagsLabel && (
             <div className="col-span-2">
               <span className="text-muted-foreground">タグ:</span>
-              <span className="ml-2">{task.tags.join(", ")}</span>
+              <span className="ml-2">{screen.viewModel.tagsLabel}</span>
             </div>
           )}
         </div>
       </div>
 
-      {task.steps && task.steps.length > 0 && (
+      {screen.viewModel.steps.length > 0 && (
         <div className="space-y-2">
-          <h2 className="font-medium">ステップ ({task.steps.length})</h2>
-          {task.steps.map((step) => (
+          <h2 className="font-medium">
+            ステップ ({screen.viewModel.steps.length})
+          </h2>
+          {screen.viewModel.steps.map((step) => (
             <div key={step.id} className="rounded-lg border bg-card p-4">
               <div className="flex items-center gap-2">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
                   {step.position}
                 </span>
                 <span className="font-medium text-sm">{step.title}</span>
-                {step.evidenceType !== "none" && (
+                {step.evidenceLabel && (
                   <span className="text-xs text-muted-foreground">
-                    [{step.evidenceType}]
+                    {step.evidenceLabel}
                   </span>
                 )}
               </div>
@@ -114,12 +106,12 @@ export function TaskDetailScreen() {
       )}
 
       <ConfirmDialog
-        open={showDelete}
+        open={screen.showDelete}
         title="タスクを削除しますか？"
-        description={`「${task.title}」を削除します。この操作は取り消せません。`}
+        description={screen.viewModel.deleteDescription}
         confirmLabel="削除"
-        onConfirm={handleDelete}
-        onCancel={closeDeleteDialog}
+        onConfirm={screen.handleDelete}
+        onCancel={screen.closeDeleteDialog}
         destructive
       />
     </div>
