@@ -1,4 +1,4 @@
-import { TaskCreateScreen } from "@/features/tasks/screens/TaskCreateScreen";
+import { TaskCreateScreen } from "@/features/tasks";
 
 export default function TaskNewPage() {
   return <TaskCreateScreen />;

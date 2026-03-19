@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import type { TaskInput } from "@/features/tasks/types";
+import type { TaskInput } from "../types";
 import { useTaskMutations } from "./useTaskMutations";
 
 export function useTaskCreateScreen() {

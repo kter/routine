@@ -1,4 +1,4 @@
-import { ExecutionScreen } from "@/features/executions/screens/ExecutionScreen";
+import { ExecutionScreen } from "@/features/executions";
 
 export default function ExecutionPage() {
   return <ExecutionScreen />;

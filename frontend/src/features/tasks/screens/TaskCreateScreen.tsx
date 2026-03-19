@@ -1,5 +1,5 @@
-import { TaskForm } from "@/features/tasks/components/TaskForm";
-import { useTaskCreateScreen } from "@/features/tasks/hooks/useTaskCreateScreen";
+import { TaskForm } from "../components";
+import { useTaskCreateScreen } from "../hooks";
 
 export function TaskCreateScreen() {
   const { handleSubmit } = useTaskCreateScreen();

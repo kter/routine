@@ -1,6 +1,6 @@
 import { PageStateMessage } from "@/components/common/PageStateMessage";
-import { TaskForm } from "@/features/tasks/components/TaskForm";
-import { useTaskEditScreen } from "@/features/tasks/hooks/useTaskEditScreen";
+import { TaskForm } from "../components";
+import { useTaskEditScreen } from "../hooks";
 
 export function TaskEditScreen() {
   const screen = useTaskEditScreen();

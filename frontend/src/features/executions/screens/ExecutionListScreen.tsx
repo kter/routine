@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
-import { useExecutionListScreen } from "@/features/executions/hooks/useExecutionListScreen";
-import { toExecutionListItemViewModel } from "@/features/executions/view-models";
+import { useExecutionListScreen } from "../hooks";
+import { toExecutionListItemViewModel } from "../view-models";
 
 function ExecutionRow({
   execution,

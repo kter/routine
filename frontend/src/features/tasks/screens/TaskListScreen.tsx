@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
-import { TaskList } from "@/features/tasks/components/TaskList";
-import { useTaskListScreen } from "@/features/tasks/hooks/useTaskListScreen";
+import { TaskList } from "../components";
+import { useTaskListScreen } from "../hooks";
 
 export function TaskListScreen() {
   const screen = useTaskListScreen();

@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import type { TaskInput } from "@/features/tasks/types";
+import type { TaskInput } from "../types";
 import { toTaskFormViewModel } from "../view-models";
 import { useTaskMutations } from "./useTaskMutations";
 import { useTask } from "./useTasks";

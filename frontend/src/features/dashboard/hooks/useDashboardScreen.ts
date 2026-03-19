@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useStartExecution } from "@/features/executions";
 import { formatDashboardDateLabel } from "../view-models";
 import { useDashboard } from "./useDashboard";
-import { useStartExecution } from "@/features/executions/hooks/useExecution";
 
 export function useDashboardScreen() {
   const { data, isLoading, error, refetch } = useDashboard();

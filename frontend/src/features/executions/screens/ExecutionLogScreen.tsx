@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle2, MinusCircle, Circle } from "lucide-react";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { useExecutionLogScreen } from "@/features/executions/hooks/useExecutionLogScreen";
+import { useExecutionLogScreen } from "../hooks";
 export function ExecutionLogScreen() {
   const screen = useExecutionLogScreen();
 

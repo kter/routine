@@ -1,4 +1,4 @@
-import { TaskDetailScreen } from "@/features/tasks/screens/TaskDetailScreen";
+import { TaskDetailScreen } from "@/features/tasks";
 
 export default function TaskDetailPage() {
   return <TaskDetailScreen />;

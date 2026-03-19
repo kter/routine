@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { PageSkeleton } from "@/components/common/PageSkeleton";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
-import { ExecutionWizard } from "@/features/executions/components/ExecutionWizard";
-import { useExecutionScreen } from "@/features/executions/hooks/useExecutionScreen";
+import { ExecutionWizard } from "../components";
+import { useExecutionScreen } from "../hooks";
 
 export function ExecutionScreen() {
   const screen = useExecutionScreen();

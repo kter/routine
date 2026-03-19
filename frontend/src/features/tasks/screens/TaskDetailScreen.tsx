@@ -4,7 +4,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { PageStateMessage } from "@/components/common/PageStateMessage";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { useTaskDetailScreen } from "@/features/tasks/hooks/useTaskDetailScreen";
+import { useTaskDetailScreen } from "../hooks";
 export function TaskDetailScreen() {
   const screen = useTaskDetailScreen();
 
