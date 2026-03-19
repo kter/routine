@@ -3,10 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from routineops.application.services.schedule_service import (
-    get_occurrences,
-    resolve_task_timezone,
-)
+from routineops.application.tasks import get_occurrences, resolve_task_timezone
 from routineops.domain.entities.task import Task
 from routineops.domain.value_objects.cron_expression import CronExpression
 

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from routineops.application.executions.ports import ExecutionRepositoryPort
-from routineops.application.queries.dashboard_query_service import (
+from routineops.application.dashboard.query_service import (
     DashboardData,
     DashboardQueryService,
 )
+from routineops.application.executions.ports import ExecutionRepositoryPort
 from routineops.application.tasks.ports import TaskRepositoryPort
 
 

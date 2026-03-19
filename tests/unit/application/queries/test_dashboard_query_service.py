@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
-from routineops.application.queries.dashboard_query_service import DashboardQueryService
+from routineops.application.dashboard import DashboardQueryService
 from routineops.domain.entities.execution import Execution
 from routineops.domain.entities.task import Task
 from routineops.domain.value_objects.cron_expression import CronExpression

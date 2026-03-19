@@ -2,8 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from routineops.application.dashboard import DashboardService
-from routineops.application.queries.dashboard_query_service import DashboardData
+from routineops.application.dashboard import DashboardData, DashboardService
 
 
 def test_get_dashboard_delegates_to_query_service() -> None:
