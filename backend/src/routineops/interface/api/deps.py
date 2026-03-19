@@ -90,8 +90,3 @@ def get_execution_service(
 
 def get_dashboard_service(context: RequestContextDep, db: DbDep) -> DashboardService:
     return build_dashboard_service(db=db, context=context)
-
-
-get_task_usecases = get_task_service
-get_execution_usecases = get_execution_service
-get_dashboard_usecases = get_dashboard_service

@@ -45,8 +45,3 @@ def build_dashboard_service(*, db: Session, context: RequestContext) -> Dashboar
     task_repo = build_task_repository(db=db, context=context)
     exec_repo = build_execution_repository(db=db, context=context)
     return DashboardService(task_repo, exec_repo)
-
-
-build_task_usecases = build_task_service
-build_execution_usecases = build_execution_service
-build_dashboard_usecases = build_dashboard_service

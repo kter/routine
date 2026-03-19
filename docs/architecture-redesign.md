@@ -185,9 +185,8 @@ Rule:
 Transition rule:
 
 - `routineops.application.*` is the canonical import surface
-- `routineops.usecases.*` remains only as a temporary compatibility facade
-- new code must not introduce fresh `routineops.usecases.*` dependencies
-- the facade can be removed after residual imports and tests are migrated
+- `routineops.usecases.*` has been removed
+- new code must use `routineops.application.*` directly
 
 ### Request Context
 
@@ -535,7 +534,7 @@ Exit criteria:
 - API wiring imports application services directly
 - repositories and ports import from `application/*`
 - unit tests for business workflows live under `tests/unit/application/`
-- `usecases/` contains compatibility aliases only
+- no `usecases/` compatibility package remains in the backend tree
 
 ### Phase 5: Rebuild Dashboard Read Path
 
