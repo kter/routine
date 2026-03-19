@@ -1,15 +1,8 @@
 import { useAuth } from "./useAuth";
+import { getGuestScreenState } from "../view-models";
 
 export function useLoginScreen() {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return { status: "loading" as const };
-  }
-
-  if (isAuthenticated) {
-    return { status: "authenticated" as const };
-  }
-
-  return { status: "ready" as const };
+  return getGuestScreenState({ isAuthenticated, isLoading });
 }

@@ -8,9 +8,12 @@ import {
   type ConfirmValues,
   type SignUpValues,
 } from "../schemas/register";
+import { getGuestScreenState } from "../view-models";
 import { confirmSignUp, signUp } from "@/lib/auth/cognito";
+import { useAuth } from "./useAuth";
 
 export function useRegisterScreen() {
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState<"signup" | "confirm">("signup");
   const [email, setEmail] = useState("");
@@ -44,7 +47,14 @@ export function useRegisterScreen() {
     }
   };
 
+  const guestState = getGuestScreenState({ isAuthenticated, isLoading });
+
+  if (guestState.status !== "ready") {
+    return guestState;
+  }
+
   return {
+    status: "ready" as const,
     step,
     email,
     error,
