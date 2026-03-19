@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from routineops.application.dashboard import DashboardService
-from routineops.interface.api.deps import RequestContextDep, get_dashboard_usecases
+from routineops.interface.api.deps import RequestContextDep, get_dashboard_service
 from routineops.interface.schemas.dashboard import DashboardResponse, DashboardTaskItem
 
 router = APIRouter()
-DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_usecases)]
+DashboardServiceDep = Annotated[DashboardService, Depends(get_dashboard_service)]
 
 
 @router.get("", response_model=DashboardResponse)

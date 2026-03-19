@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 
 from routineops.application.tasks import TaskService
-from routineops.interface.api.deps import RequestContextDep, get_task_usecases
+from routineops.interface.api.deps import RequestContextDep, get_task_service
 from routineops.interface.schemas.task import (
     CreateTaskRequest,
     StepResponse,
@@ -13,7 +13,7 @@ from routineops.interface.schemas.task import (
 )
 
 router = APIRouter()
-TaskServiceDep = Annotated[TaskService, Depends(get_task_usecases)]
+TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
 
 
 def _map_task(task) -> TaskResponse:  # type: ignore[no-untyped-def]

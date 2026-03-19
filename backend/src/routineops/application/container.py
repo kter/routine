@@ -25,12 +25,12 @@ def build_storage(*, bucket_name: str | None = None) -> S3StorageImpl:
     return S3StorageImpl(bucket_name=bucket_name)
 
 
-def build_task_usecases(*, db: Session, context: RequestContext) -> TaskService:
+def build_task_service(*, db: Session, context: RequestContext) -> TaskService:
     task_repo = build_task_repository(db=db, context=context)
     return TaskService(task_repo, context)
 
 
-def build_execution_usecases(
+def build_execution_service(
     *,
     db: Session,
     context: RequestContext,
@@ -41,7 +41,12 @@ def build_execution_usecases(
     return ExecutionService(exec_repo, task_repo, storage, context)
 
 
-def build_dashboard_usecases(*, db: Session, context: RequestContext) -> DashboardService:
+def build_dashboard_service(*, db: Session, context: RequestContext) -> DashboardService:
     task_repo = build_task_repository(db=db, context=context)
     exec_repo = build_execution_repository(db=db, context=context)
     return DashboardService(task_repo, exec_repo)
+
+
+build_task_usecases = build_task_service
+build_execution_usecases = build_execution_service
+build_dashboard_usecases = build_dashboard_service

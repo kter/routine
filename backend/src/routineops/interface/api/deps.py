@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from routineops.app.auth import TENANT_ID_CLAIM
 from routineops.app.request_context import RequestContext
 from routineops.application.container import (
-    build_dashboard_usecases,
-    build_execution_usecases,
+    build_dashboard_service,
+    build_execution_service,
     build_storage,
-    build_task_usecases,
+    build_task_service,
 )
 from routineops.application.dashboard import DashboardService
 from routineops.application.executions import ExecutionService
@@ -76,17 +76,22 @@ def get_storage() -> S3StorageImpl:
     return build_storage(bucket_name=settings.evidence_bucket_name)
 
 
-def get_task_usecases(context: RequestContextDep, db: DbDep) -> TaskService:
-    return build_task_usecases(db=db, context=context)
+def get_task_service(context: RequestContextDep, db: DbDep) -> TaskService:
+    return build_task_service(db=db, context=context)
 
 
-def get_execution_usecases(
+def get_execution_service(
     context: RequestContextDep,
     db: DbDep,
     storage: Annotated[S3StorageImpl, Depends(get_storage)],
 ) -> ExecutionService:
-    return build_execution_usecases(db=db, context=context, storage=storage)
+    return build_execution_service(db=db, context=context, storage=storage)
 
 
-def get_dashboard_usecases(context: RequestContextDep, db: DbDep) -> DashboardService:
-    return build_dashboard_usecases(db=db, context=context)
+def get_dashboard_service(context: RequestContextDep, db: DbDep) -> DashboardService:
+    return build_dashboard_service(db=db, context=context)
+
+
+get_task_usecases = get_task_service
+get_execution_usecases = get_execution_service
+get_dashboard_usecases = get_dashboard_service

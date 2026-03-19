@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, status
 
 from routineops.application.executions import ExecutionService
 from routineops.domain.entities.execution import Execution
-from routineops.interface.api.deps import RequestContextDep, get_execution_usecases
+from routineops.interface.api.deps import RequestContextDep, get_execution_service
 from routineops.interface.schemas.execution import (
     AbandonExecutionRequest,
     CompleteExecutionRequest,
@@ -18,7 +18,7 @@ from routineops.interface.schemas.execution import (
 )
 
 router = APIRouter()
-ExecutionServiceDep = Annotated[ExecutionService, Depends(get_execution_usecases)]
+ExecutionServiceDep = Annotated[ExecutionService, Depends(get_execution_service)]
 
 
 def _map_execution(execution: Execution, task_title: str | None = None) -> ExecutionResponse:

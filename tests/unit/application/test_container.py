@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 
 from routineops.app.request_context import RequestContext
 from routineops.application.container import (
-    build_dashboard_usecases,
-    build_execution_usecases,
+    build_dashboard_service,
+    build_execution_service,
     build_storage,
-    build_task_usecases,
+    build_task_service,
 )
 from routineops.application.dashboard import DashboardService
 from routineops.application.executions import ExecutionService
@@ -23,38 +23,38 @@ def make_context() -> RequestContext:
     )
 
 
-def test_build_task_usecases_returns_task_service() -> None:
+def test_build_task_service_returns_task_service() -> None:
     db_session = MagicMock(spec=Session)
-    usecases = build_task_usecases(
+    service = build_task_service(
         db=db_session,
         context=make_context(),
     )
 
-    assert isinstance(usecases, TaskService)
+    assert isinstance(service, TaskService)
 
 
-def test_build_execution_usecases_uses_injected_storage() -> None:
+def test_build_execution_service_uses_injected_storage() -> None:
     db_session = MagicMock(spec=Session)
     storage = build_storage(bucket_name="test-bucket")
 
-    usecases = build_execution_usecases(
+    service = build_execution_service(
         db=db_session,
         context=make_context(),
         storage=storage,
     )
 
-    assert isinstance(usecases, ExecutionService)
-    assert usecases._storage is storage
+    assert isinstance(service, ExecutionService)
+    assert service._storage is storage
 
 
-def test_build_dashboard_usecases_returns_dashboard_service() -> None:
+def test_build_dashboard_service_returns_dashboard_service() -> None:
     db_session = MagicMock(spec=Session)
-    usecases = build_dashboard_usecases(
+    service = build_dashboard_service(
         db=db_session,
         context=make_context(),
     )
 
-    assert isinstance(usecases, DashboardService)
+    assert isinstance(service, DashboardService)
 
 
 def test_build_storage_returns_storage_adapter() -> None:
