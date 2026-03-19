@@ -182,6 +182,13 @@ Rule:
 - application services call repositories/gateways
 - repositories do not contain workflow logic
 
+Transition rule:
+
+- `routineops.application.*` is the canonical import surface
+- `routineops.usecases.*` remains only as a temporary compatibility facade
+- new code must not introduce fresh `routineops.usecases.*` dependencies
+- the facade can be removed after residual imports and tests are migrated
+
 ### Request Context
 
 Introduce one request-scoped object:
@@ -523,6 +530,13 @@ Outcome:
 
 - core product flows gain coherent boundaries
 
+Exit criteria:
+
+- API wiring imports application services directly
+- repositories and ports import from `application/*`
+- unit tests for business workflows live under `tests/unit/application/`
+- `usecases/` contains compatibility aliases only
+
 ### Phase 5: Rebuild Dashboard Read Path
 
 - replace in-memory dashboard composition
@@ -554,6 +568,16 @@ Outcome:
 Outcome:
 
 - frontend structure matches product structure
+
+### Phase 8: Compatibility Cleanup
+
+- remove the `routineops.usecases` compatibility facade
+- remove legacy `build_*_usecases` and `get_*_usecases` aliases
+- update residual documentation and examples to reference `application/*`
+
+Outcome:
+
+- one canonical vocabulary remains in code and docs
 
 ## Priority Order
 
