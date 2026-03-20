@@ -5,6 +5,12 @@ import { AuthFormField } from "./AuthFormField";
 import { AuthSubmitButton } from "./AuthSubmitButton";
 
 describe("AuthFormField", () => {
+  it("forwards refs to the input element for form libraries", () => {
+    expect((AuthFormField as unknown as { $$typeof?: symbol }).$$typeof).toBe(
+      Symbol.for("react.forward_ref"),
+    );
+  });
+
   it("renders label, input, and error text", () => {
     const html = renderToStaticMarkup(
       <AuthFormField
