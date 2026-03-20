@@ -37,18 +37,78 @@ def db_session() -> Session:
         engine.dispose()
 
 
-def test_task_repository_rejects_mismatched_tenant_id(db_session: Session) -> None:
+def test_task_repository_list_is_tenant_scoped(db_session: Session) -> None:
+    now = datetime.now(tz=UTC)
+    db_session.add_all(
+        [
+            TaskModel(
+                id=uuid4(),
+                tenant_id=TENANT_ID,
+                title="owned-task",
+                description="",
+                cron_expression="0 10 * * *",
+                timezone="UTC",
+                estimated_minutes=30,
+                is_active=True,
+                tags=[],
+                metadata_={},
+                created_by="tenant-a",
+                created_at=now,
+                updated_at=now,
+            ),
+            TaskModel(
+                id=uuid4(),
+                tenant_id=OTHER_TENANT_ID,
+                title="foreign-task",
+                description="",
+                cron_expression="0 10 * * *",
+                timezone="UTC",
+                estimated_minutes=30,
+                is_active=True,
+                tags=[],
+                metadata_={},
+                created_by="tenant-b",
+                created_at=now,
+                updated_at=now,
+            ),
+        ]
+    )
+    db_session.commit()
+
     repo = TaskRepositoryImpl(db_session, TENANT_ID)
+    tasks = repo.list()
 
-    with pytest.raises(ValueError, match="Repository tenant mismatch"):
-        repo.list(OTHER_TENANT_ID)
+    assert [task.title for task in tasks] == ["owned-task"]
 
 
-def test_execution_repository_rejects_mismatched_tenant_id(db_session: Session) -> None:
+def test_execution_repository_get_is_tenant_scoped(db_session: Session) -> None:
+    foreign_execution_id = uuid4()
+    now = datetime.now(tz=UTC)
+    from routineops.infrastructure.db.models.execution_model import ExecutionModel
+
+    db_session.add(
+        ExecutionModel(
+            id=foreign_execution_id,
+            tenant_id=OTHER_TENANT_ID,
+            task_id=uuid4(),
+            started_by="tenant-b",
+            status="in_progress",
+            scheduled_for=now,
+            started_at=now,
+            completed_at=None,
+            duration_seconds=None,
+            notes="",
+            metadata_={},
+            created_at=now,
+            updated_at=now,
+        )
+    )
+    db_session.commit()
+
     repo = ExecutionRepositoryImpl(db_session, TENANT_ID)
+    execution = repo.get(foreign_execution_id)
 
-    with pytest.raises(ValueError, match="Repository tenant mismatch"):
-        repo.get(OTHER_TENANT_ID, uuid4())
+    assert execution is None
 
 
 def test_execution_repository_update_step_is_tenant_scoped(db_session: Session) -> None:
@@ -119,7 +179,7 @@ def test_task_repository_delete_is_tenant_scoped(db_session: Session) -> None:
     db_session.commit()
 
     repo = TaskRepositoryImpl(db_session, TENANT_ID)
-    repo.delete(TENANT_ID, foreign_task_id)
+    repo.delete(foreign_task_id)
 
     remaining = (
         db_session.query(TaskModel)

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { AuthStateScreen } from "./AuthStateScreen";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,9 +12,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <span className="text-sm text-muted-foreground">読み込み中...</span>
-      </div>
+      <AuthStateScreen
+        title="認証状態を確認中..."
+        description="アクセス権を検証しています。"
+      />
     );
   }
 

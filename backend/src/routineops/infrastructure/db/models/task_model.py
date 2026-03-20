@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, Boolean, Integer, Text, Uuid
+from sqlalchemy import Boolean, Integer, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from routineops.infrastructure.db.base import Base, TimestampMixin
+from routineops.infrastructure.db.dsql_compat import JsonArrayText, JsonObjectText
 
 if TYPE_CHECKING:
     from routineops.infrastructure.db.models.step_model import StepModel
@@ -21,15 +22,16 @@ class TaskModel(Base, TimestampMixin):
     timezone: Mapped[str] = mapped_column(Text, nullable=False, default="Asia/Tokyo")
     estimated_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    tags: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    tags: Mapped[list[str]] = mapped_column(JsonArrayText(), nullable=False, default=list)
     metadata_: Mapped[dict[str, object]] = mapped_column(
-        "metadata", JSON, nullable=False, default=dict
+        "metadata", JsonObjectText(), nullable=False, default=dict
     )
     created_by: Mapped[str] = mapped_column(Text, nullable=False)
 
     steps: Mapped[list["StepModel"]] = relationship(
         "StepModel",
         back_populates="task",
+        primaryjoin="TaskModel.id == foreign(StepModel.task_id)",
         order_by="StepModel.position",
         cascade="all, delete-orphan",
     )

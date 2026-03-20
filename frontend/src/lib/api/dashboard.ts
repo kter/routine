@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
+import { mapDashboardDataDto } from "@/features/dashboard";
 import type { DashboardDataDto } from "@/lib/api/dto/dashboard";
-import { mapDashboardDataDto } from "@/features/dashboard/mappers";
 
 export const dashboardApi = {
   get: async () =>

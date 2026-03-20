@@ -1,14 +1,14 @@
 import { apiClient } from "./client";
 import type {
-  StartExecutionInput,
   CompleteStepInput,
-} from "@/features/executions/types";
+  StartExecutionInput,
+} from "@/features/executions";
 import type { ExecutionDto } from "@/lib/api/dto/executions";
 import {
   mapExecutionDto,
   toCompleteStepRequestDto,
   toStartExecutionRequestDto,
-} from "@/features/executions/mappers";
+} from "@/features/executions";
 
 export const executionsApi = {
   list: async () =>

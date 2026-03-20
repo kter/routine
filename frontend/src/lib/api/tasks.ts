@@ -1,11 +1,12 @@
 import { apiClient } from "./client";
-import type { TaskInput, TaskUpdateInput } from "@/features/tasks/types";
 import type { TaskDto } from "@/lib/api/dto/tasks";
 import {
   mapTaskDto,
+  type TaskInput,
+  type TaskUpdateInput,
   toCreateTaskRequestDto,
   toUpdateTaskRequestDto,
-} from "@/features/tasks/mappers";
+} from "@/features/tasks";
 
 export const tasksApi = {
   list: async () =>

@@ -3,8 +3,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
+from routineops.application.executions import ExecutionService
 from routineops.domain.entities.execution import Execution
-from routineops.interface.api.deps import RequestContextDep, get_execution_usecases
+from routineops.interface.api.deps import RequestContextDep, get_execution_service
 from routineops.interface.schemas.execution import (
     AbandonExecutionRequest,
     CompleteExecutionRequest,
@@ -15,10 +16,9 @@ from routineops.interface.schemas.execution import (
     ExecutionStepResponse,
     StartExecutionRequest,
 )
-from routineops.usecases.execution_usecases import ExecutionUsecases
 
 router = APIRouter()
-ExecUsecasesDep = Annotated[ExecutionUsecases, Depends(get_execution_usecases)]
+ExecutionServiceDep = Annotated[ExecutionService, Depends(get_execution_service)]
 
 
 def _map_execution(execution: Execution, task_title: str | None = None) -> ExecutionResponse:
@@ -55,27 +55,27 @@ def _map_execution(execution: Execution, task_title: str | None = None) -> Execu
 
 @router.get("", response_model=list[ExecutionResponse])
 def list_executions(
-    _context: RequestContextDep, usecases: ExecUsecasesDep
+    _context: RequestContextDep, service: ExecutionServiceDep
 ) -> list[ExecutionResponse]:
-    return [_map_execution(e) for e in usecases.list_executions()]
+    return [_map_execution(e) for e in service.list_executions()]
 
 
 @router.get("/{execution_id}", response_model=ExecutionResponse)
 def get_execution(
     execution_id: UUID,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionResponse:
-    return _map_execution(usecases.get_execution(execution_id))
+    return _map_execution(service.get_execution(execution_id))
 
 
 @router.post("", response_model=ExecutionResponse, status_code=status.HTTP_201_CREATED)
 def start_execution(
     body: StartExecutionRequest,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionResponse:
-    execution = usecases.start_execution(
+    execution = service.start_execution(
         task_id=body.task_id,
         scheduled_for=body.scheduled_for,
         notes=body.notes,
@@ -89,9 +89,9 @@ def complete_step(
     step_id: UUID,
     body: CompleteStepRequest,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionStepResponse:
-    step = usecases.complete_step(
+    step = service.complete_step(
         execution_id=execution_id,
         step_id=step_id,
         evidence_text=body.evidence_text,
@@ -118,9 +118,9 @@ def skip_step(
     execution_id: UUID,
     step_id: UUID,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionStepResponse:
-    step = usecases.skip_step(execution_id, step_id)
+    step = service.skip_step(execution_id, step_id)
     return ExecutionStepResponse(
         id=step.id,
         execution_id=step.execution_id,
@@ -141,9 +141,9 @@ def complete_execution(
     execution_id: UUID,
     body: CompleteExecutionRequest,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionResponse:
-    return _map_execution(usecases.complete_execution(execution_id, notes=body.notes))
+    return _map_execution(service.complete_execution(execution_id, notes=body.notes))
 
 
 @router.patch("/{execution_id}/abandon", response_model=ExecutionResponse)
@@ -151,9 +151,9 @@ def abandon_execution(
     execution_id: UUID,
     body: AbandonExecutionRequest,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> ExecutionResponse:
-    return _map_execution(usecases.abandon_execution(execution_id, notes=body.notes))
+    return _map_execution(service.abandon_execution(execution_id, notes=body.notes))
 
 
 @router.post(
@@ -165,7 +165,7 @@ def get_evidence_upload_url(
     step_id: UUID,
     body: EvidenceUploadUrlRequest,
     _context: RequestContextDep,
-    usecases: ExecUsecasesDep,
+    service: ExecutionServiceDep,
 ) -> EvidenceUploadUrlResponse:
-    upload_url, key = usecases.get_evidence_upload_url(execution_id, step_id, body.content_type)
+    upload_url, key = service.get_evidence_upload_url(execution_id, step_id, body.content_type)
     return EvidenceUploadUrlResponse(upload_url=upload_url, key=key)

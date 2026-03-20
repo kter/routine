@@ -10,17 +10,17 @@ from sqlalchemy.orm import Session
 from routineops.app.auth import TENANT_ID_CLAIM
 from routineops.app.request_context import RequestContext
 from routineops.application.container import (
-    build_dashboard_usecases,
-    build_execution_usecases,
+    build_dashboard_service,
+    build_execution_service,
     build_storage,
-    build_task_usecases,
+    build_task_service,
 )
+from routineops.application.dashboard import DashboardService
+from routineops.application.executions import ExecutionService
+from routineops.application.tasks import TaskService
 from routineops.config.settings import get_api_settings
 from routineops.infrastructure.db.session import get_db
 from routineops.infrastructure.storage.s3_storage import S3StorageImpl
-from routineops.usecases.dashboard_usecases import DashboardUsecases
-from routineops.usecases.execution_usecases import ExecutionUsecases
-from routineops.usecases.task_usecases import TaskUsecases
 
 security = HTTPBearer()
 
@@ -76,17 +76,17 @@ def get_storage() -> S3StorageImpl:
     return build_storage(bucket_name=settings.evidence_bucket_name)
 
 
-def get_task_usecases(context: RequestContextDep, db: DbDep) -> TaskUsecases:
-    return build_task_usecases(db=db, context=context)
+def get_task_service(context: RequestContextDep, db: DbDep) -> TaskService:
+    return build_task_service(db=db, context=context)
 
 
-def get_execution_usecases(
+def get_execution_service(
     context: RequestContextDep,
     db: DbDep,
     storage: Annotated[S3StorageImpl, Depends(get_storage)],
-) -> ExecutionUsecases:
-    return build_execution_usecases(db=db, context=context, storage=storage)
+) -> ExecutionService:
+    return build_execution_service(db=db, context=context, storage=storage)
 
 
-def get_dashboard_usecases(context: RequestContextDep, db: DbDep) -> DashboardUsecases:
-    return build_dashboard_usecases(db=db, context=context)
+def get_dashboard_service(context: RequestContextDep, db: DbDep) -> DashboardService:
+    return build_dashboard_service(db=db, context=context)
