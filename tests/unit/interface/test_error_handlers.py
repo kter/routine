@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -30,6 +32,10 @@ def create_test_app() -> FastAPI:
     def raise_auth() -> None:
         raise AuthorizationError("forbidden")
 
+    @app.get("/boom")
+    def raise_unexpected() -> None:
+        raise RuntimeError("boom")
+
     return app
 
 
@@ -52,3 +58,21 @@ def test_register_exception_handlers_maps_domain_errors() -> None:
 
     assert auth.status_code == 403
     assert auth.json() == {"detail": "forbidden"}
+
+
+def test_register_exception_handlers_maps_unexpected_errors(caplog) -> None:
+    client = TestClient(create_test_app(), raise_server_exceptions=False)
+
+    with caplog.at_level(logging.ERROR):
+        response = client.get("/boom")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+
+    error_log = next(
+        record
+        for record in caplog.records
+        if getattr(record, "event_name", "") == "unexpected_exception"
+    )
+    assert error_log.status_code == 500
+    assert error_log.route == "/boom"

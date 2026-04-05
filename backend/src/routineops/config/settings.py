@@ -15,6 +15,8 @@ class DatabaseSettings(BaseSettings):
     sqlite_path: str = Field(default=":memory:", alias="SQLITE_PATH")
     db_cluster_endpoint: str | None = Field(default=None, alias="DB_CLUSTER_ENDPOINT")
     db_name: str = Field(default="postgres", alias="DB_NAME")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    log_format: str = Field(default="json", alias="LOG_FORMAT")
 
 
 class ApiSettings(DatabaseSettings):

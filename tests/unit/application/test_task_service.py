@@ -1,7 +1,7 @@
 """Unit tests for TaskService with mocked repository."""
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -161,6 +161,20 @@ class TestCreateTask:
 
         mock_repo.create.assert_called_once()
 
+    def test_logs_task_creation(self, service: TaskService, mock_repo: MagicMock) -> None:
+        mock_repo.create.side_effect = lambda created_task: created_task
+
+        with patch("routineops.application.tasks.service.emit_structured_log") as emit_log:
+            result = service.create_task(
+                title="ログ対象タスク",
+                cron_expression="0 10 * * *",
+            )
+
+        assert result.id is not None
+        emit_log.assert_called_once()
+        assert emit_log.call_args.kwargs["event_name"] == "task_mutated"
+        assert emit_log.call_args.kwargs["action"] == "create"
+
     def test_normalizes_blank_timezone_to_asia_tokyo(
         self, service: TaskService, mock_repo: MagicMock
     ) -> None:
@@ -191,6 +205,16 @@ class TestDeleteTask:
 
         with pytest.raises(NotFoundError):
             service.delete_task(uuid4())
+
+    def test_logs_task_deletion(self, service: TaskService, mock_repo: MagicMock) -> None:
+        task = make_task()
+        mock_repo.get.return_value = task
+
+        with patch("routineops.application.tasks.service.emit_structured_log") as emit_log:
+            service.delete_task(task.id)
+
+        emit_log.assert_called_once()
+        assert emit_log.call_args.kwargs["action"] == "delete"
 
 
 class TestUpdateTask:

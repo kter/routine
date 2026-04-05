@@ -40,4 +40,14 @@ def get_occurrences(task: Task, start: datetime, end: datetime) -> list[datetime
             occurrences.append(occurrence_utc)
         return occurrences
     except Exception:
+        logger.exception(
+            "Failed to calculate task occurrences",
+            extra={
+                "event_name": "task_schedule_failed",
+                "task_id": str(task.id),
+                "cron_expression": str(task.cron_expression),
+                "timezone_name": task.timezone,
+                "outcome": "error",
+            },
+        )
         return []

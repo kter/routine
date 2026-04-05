@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
@@ -11,6 +12,9 @@ from routineops.domain.entities.task import Step, Task
 from routineops.domain.exceptions import NotFoundError
 from routineops.domain.value_objects.cron_expression import CronExpression
 from routineops.domain.value_objects.evidence_type import EvidenceType
+from routineops.infrastructure.monitoring.logging import emit_structured_log
+
+logger = logging.getLogger(__name__)
 
 
 class TaskService:
@@ -60,7 +64,18 @@ class TaskService:
         if steps:
             task.steps = self._build_steps(self._context.tenant_id, task.id, steps, now)
 
-        return self._repo.create(task)
+        created_task = self._repo.create(task)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Task created",
+            event_name="task_mutated",
+            action="create",
+            task_id=str(created_task.id),
+            step_count=len(created_task.steps),
+            outcome="success",
+        )
+        return created_task
 
     def update_task(
         self,
@@ -93,13 +108,40 @@ class TaskService:
             )
 
         task.updated_at = now
-        return self._repo.update(task)
+        updated_task = self._repo.update(task)
+        updated_fields = sorted(
+            [
+                *[str(key) for key in kwargs.keys()],
+                *(["steps"] if has_steps_update else []),
+            ]
+        )
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Task updated",
+            event_name="task_mutated",
+            action="update",
+            task_id=str(updated_task.id),
+            changed_fields=updated_fields,
+            step_count=len(updated_task.steps),
+            outcome="success",
+        )
+        return updated_task
 
     def delete_task(self, task_id: UUID) -> None:
         task = self._repo.get(task_id)
         if task is None:
             raise NotFoundError("Task", str(task_id))
         self._repo.delete(task_id)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Task deleted",
+            event_name="task_mutated",
+            action="delete",
+            task_id=str(task_id),
+            outcome="success",
+        )
 
     def _build_steps(
         self,

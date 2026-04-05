@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react";
 import { getIdToken } from "@/lib/auth/cognito";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -43,9 +44,64 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public body?: unknown,
+    public requestId?: string,
   ) {
     super(message);
   }
+}
+
+export function createRequestId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return `req-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function addApiFailureBreadcrumb(params: {
+  method: string;
+  path: string;
+  requestId: string;
+  statusCode?: number;
+}): void {
+  Sentry.addBreadcrumb({
+    category: "api",
+    level: "error",
+    message: "API request failed",
+    data: {
+      method: params.method,
+      path: params.path,
+      request_id: params.requestId,
+      status_code: params.statusCode,
+    },
+  });
+}
+
+function captureApiException(
+  error: Error,
+  params: {
+    method: string;
+    path: string;
+    requestId: string;
+    statusCode?: number;
+  },
+): void {
+  Sentry.withScope((scope) => {
+    scope.setTag("request_id", params.requestId);
+    if (params.statusCode !== undefined) {
+      scope.setTag("http_status", String(params.statusCode));
+    }
+    scope.setContext("api", {
+      method: params.method,
+      path: params.path,
+      requestId: params.requestId,
+      statusCode: params.statusCode,
+    });
+    Sentry.captureException(error);
+  });
 }
 
 function extractErrorMessage(body: unknown): string | null {
@@ -88,28 +144,69 @@ export function normalizeApiError(
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = await getIdToken();
   const url = `${BASE_URL}${path}`;
+  const method = options.method ?? "GET";
+  const requestId = createRequestId();
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "X-Request-ID": requestId,
+        ...options.headers,
+      },
+    });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new ApiError(
-      response.status,
-      getApiErrorMessage(body, response.status),
-      body,
-    );
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const responseRequestId =
+        response.headers.get("X-Request-ID") ?? requestId;
+      const error = new ApiError(
+        response.status,
+        getApiErrorMessage(body, response.status),
+        body,
+        responseRequestId,
+      );
+      addApiFailureBreadcrumb({
+        method,
+        path,
+        requestId: responseRequestId,
+        statusCode: response.status,
+      });
+      if (response.status >= 500) {
+        captureApiException(error, {
+          method,
+          path,
+          requestId: responseRequestId,
+          statusCode: response.status,
+        });
+      }
+      throw error;
+    }
+
+    if (response.status === 204) return undefined as T;
+    const json = await response.json();
+    return convertKeysToCamel(json) as T;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    const requestError =
+      error instanceof Error ? error : new Error("Network request failed");
+    addApiFailureBreadcrumb({
+      method,
+      path,
+      requestId,
+    });
+    captureApiException(requestError, {
+      method,
+      path,
+      requestId,
+    });
+    throw requestError;
   }
-
-  if (response.status === 204) return undefined as T;
-  const json = await response.json();
-  return convertKeysToCamel(json) as T;
 }
 
 export const apiClient = {

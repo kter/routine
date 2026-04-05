@@ -63,6 +63,19 @@ def assert_step_response_contract(step: dict, *, task_id: str) -> None:
 
 
 class TestCreateTask:
+    def test_echoes_request_id_header(self, client: TestClient) -> None:
+        resp = client.post(
+            "/api/v1/tasks",
+            headers={"X-Request-ID": "req-int-123"},
+            json={
+                "title": "相関 ID タスク",
+                "cron_expression": "0 10 * * *",
+            },
+        )
+
+        assert resp.status_code == 201
+        assert resp.headers["X-Request-ID"] == "req-int-123"
+
     def test_creates_task_successfully(self, client: TestClient) -> None:
         resp = client.post(
             "/api/v1/tasks",

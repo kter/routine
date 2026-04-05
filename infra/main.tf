@@ -79,6 +79,9 @@ module "cognito" {
   aws_region                = var.aws_region
   sentry_dsn_parameter_name = local.sentry_backend_dsn_parameter_name
   sentry_traces_sample_rate = var.sentry_traces_sample_rate
+  log_level                 = var.log_level
+  log_format                = var.log_format
+  log_retention_days        = var.lambda_log_retention_days
 }
 
 module "aurora_dsql" {
@@ -113,6 +116,9 @@ module "lambda" {
   cors_origins              = "https://${local.config.frontend_domain}"
   sentry_dsn_parameter_name = local.sentry_backend_dsn_parameter_name
   sentry_traces_sample_rate = var.sentry_traces_sample_rate
+  log_level                 = var.log_level
+  log_format                = var.log_format
+  log_retention_days        = var.lambda_log_retention_days
 }
 
 module "api_gateway" {

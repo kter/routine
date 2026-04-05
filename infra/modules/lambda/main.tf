@@ -89,6 +89,8 @@ resource "aws_lambda_function" "api" {
         DB_TYPE              = "dsql"
         DB_CLUSTER_ENDPOINT  = var.db_cluster_endpoint
         DB_NAME              = "postgres"
+        LOG_LEVEL            = var.log_level
+        LOG_FORMAT           = var.log_format
         COGNITO_USER_POOL_ID = var.cognito_user_pool_id
         COGNITO_CLIENT_ID    = var.cognito_client_id
         COGNITO_JWKS_URL     = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${var.cognito_user_pool_id}/.well-known/jwks.json"

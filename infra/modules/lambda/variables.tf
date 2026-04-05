@@ -46,3 +46,13 @@ variable "sentry_traces_sample_rate" {
   type    = number
   default = 0.1
 }
+
+variable "log_level" {
+  type    = string
+  default = "INFO"
+}
+
+variable "log_format" {
+  type    = string
+  default = "json"
+}
