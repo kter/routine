@@ -84,6 +84,8 @@ resource "aws_lambda_function" "post_confirmation" {
         ENV                 = var.environment
         DB_CLUSTER_ENDPOINT = var.db_cluster_endpoint
         DB_NAME             = "postgres"
+        LOG_LEVEL           = var.log_level
+        LOG_FORMAT          = var.log_format
       },
       local.sentry_env,
     )
@@ -92,7 +94,7 @@ resource "aws_lambda_function" "post_confirmation" {
 
 resource "aws_cloudwatch_log_group" "post_confirmation" {
   name              = "/aws/lambda/${aws_lambda_function.post_confirmation.function_name}"
-  retention_in_days = 30
+  retention_in_days = var.log_retention_days
 }
 
 resource "aws_lambda_permission" "cognito_invoke" {

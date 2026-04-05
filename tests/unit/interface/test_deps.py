@@ -1,4 +1,5 @@
 import os
+from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import UUID
 
@@ -6,6 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from routineops.app.request_context import RequestContext
 from routineops.config.settings import clear_settings_caches
+from routineops.infrastructure.monitoring.logging import clear_log_context
 from routineops.interface.api.deps import (
     get_dashboard_service,
     get_execution_service,
@@ -17,6 +19,7 @@ from routineops.interface.api.deps import (
 
 def test_get_request_context_uses_test_mode_settings() -> None:
     credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="ignored")
+    request = SimpleNamespace(state=SimpleNamespace(request_id="req-123"))
 
     with patch.dict(
         os.environ,
@@ -28,10 +31,41 @@ def test_get_request_context_uses_test_mode_settings() -> None:
         clear=False,
     ):
         clear_settings_caches()
-        context = get_request_context(credentials)
+        context = get_request_context(credentials, request)
+        clear_settings_caches()
 
     assert str(context.tenant_id) == "00000000-0000-0000-0000-000000000777"
     assert context.user_sub == "deps-user"
+    assert context.request_id == "req-123"
+    clear_log_context()
+
+
+def test_get_request_context_logs_successful_auth_decision() -> None:
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="signed-token")
+    request = SimpleNamespace(state=SimpleNamespace(request_id="req-auth"))
+    clear_settings_caches()
+
+    with (
+        patch("routineops.interface.api.deps.emit_structured_log") as emit_structured_log,
+        patch(
+            "routineops.interface.api.deps.get_api_settings",
+            return_value=SimpleNamespace(test_mode=False),
+        ),
+        patch(
+            "routineops.infrastructure.auth.cognito.verify_token",
+            return_value={
+                "sub": "verified-user",
+                "custom:tenant_id": "00000000-0000-0000-0000-000000000111",
+            },
+        ),
+    ):
+        context = get_request_context(credentials, request)
+    clear_settings_caches()
+
+    assert context.request_id == "req-auth"
+    assert str(context.tenant_id) == "00000000-0000-0000-0000-000000000111"
+    emit_structured_log.assert_called()
+    clear_log_context()
 
 
 def test_get_task_service_delegates_to_container() -> None:

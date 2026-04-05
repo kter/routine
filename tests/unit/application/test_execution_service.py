@@ -1,7 +1,7 @@
 """Unit tests for ExecutionService - step completion logic."""
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -191,6 +191,27 @@ class TestStartExecution:
         with pytest.raises(ValidationError, match="not active"):
             service.start_execution(task.id)
 
+    def test_logs_execution_start(
+        self,
+        service: ExecutionService,
+        mock_exec_repo: MagicMock,
+        mock_task_repo: MagicMock,
+    ) -> None:
+        task_id = uuid4()
+        step = make_step(task_id)
+        task = make_task(steps=[step])
+        mock_task_repo.get_with_steps.return_value = task
+
+        execution = make_execution(task_id=task_id)
+        mock_exec_repo.create.return_value = execution
+        mock_exec_repo.create_step.return_value = make_exec_step(execution.id, step_id=step.id)
+
+        with patch("routineops.application.executions.service.emit_structured_log") as emit_log:
+            service.start_execution(task_id)
+
+        assert emit_log.called
+        assert emit_log.call_args.kwargs["action"] == "start"
+
 
 class TestCompleteStep:
     def test_completes_step_without_evidence(
@@ -245,6 +266,27 @@ class TestCompleteStep:
 
         with pytest.raises(ValidationError, match="already"):
             service.complete_step(execution.id, exec_step.id)
+
+    def test_logs_step_completion(
+        self,
+        service: ExecutionService,
+        mock_exec_repo: MagicMock,
+    ) -> None:
+        execution = make_execution()
+        exec_step = make_exec_step(execution.id)
+        execution.steps = [exec_step]
+        mock_exec_repo.get_with_steps.return_value = execution
+        mock_exec_repo.update_step.return_value = make_exec_step(
+            execution.id,
+            step_id=exec_step.step_id,
+            status=StepStatus.COMPLETED,
+        )
+
+        with patch("routineops.application.executions.service.emit_structured_log") as emit_log:
+            service.complete_step(execution.id, exec_step.id)
+
+        assert emit_log.called
+        assert emit_log.call_args.kwargs["action"] == "complete_step"
 
 
 class TestCompleteExecution:

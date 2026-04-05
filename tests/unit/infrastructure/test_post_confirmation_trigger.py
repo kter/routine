@@ -73,6 +73,9 @@ def test_provisions_tenant_for_signup_user() -> None:
             "routineops.infrastructure.auth.post_confirmation_trigger.build_tenant_provisioning_service",
             return_value=service,
         ) as build_service,
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.emit_structured_log"
+        ) as emit_structured_log,
     ):
         result = handler(event, context=None)
 
@@ -85,6 +88,7 @@ def test_provisions_tenant_for_signup_user() -> None:
             username="alice-sub",
         )
     )
+    assert emit_structured_log.call_count == 2
 
 
 def test_missing_db_cluster_endpoint_raises() -> None:
@@ -101,3 +105,31 @@ def test_missing_db_cluster_endpoint_raises() -> None:
     ):
         with pytest.raises(ValueError, match="DB_CLUSTER_ENDPOINT is not configured"):
             handler(event, context=None)
+
+
+def test_logs_masked_email_when_provisioning_fails() -> None:
+    event = _make_event(email="secret@example.com", username="alice-sub", user_pool_id="pool-id")
+    settings = SimpleNamespace(
+        db_cluster_endpoint="cluster.example",
+        aws_region="ap-northeast-1",
+        db_name="postgres",
+    )
+
+    with (
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.get_tenant_provisioning_settings",
+            return_value=settings,
+        ),
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.build_tenant_provisioning_service",
+            side_effect=RuntimeError("boom"),
+        ),
+        patch(
+            "routineops.infrastructure.auth.post_confirmation_trigger.logger.exception"
+        ) as log_exception,
+    ):
+        with pytest.raises(RuntimeError, match="boom"):
+            handler(event, context=None)
+
+    assert log_exception.called
+    assert log_exception.call_args.kwargs["extra"]["email"] == "***@example.com"

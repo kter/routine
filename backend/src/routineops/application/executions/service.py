@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -10,6 +11,9 @@ from routineops.application.tasks.ports import TaskRepositoryPort
 from routineops.domain.entities.execution import Execution, ExecutionStep
 from routineops.domain.exceptions import NotFoundError, ValidationError
 from routineops.domain.value_objects.execution_status import ExecutionStatus, StepStatus
+from routineops.infrastructure.monitoring.logging import emit_structured_log
+
+logger = logging.getLogger(__name__)
 
 
 class ExecutionService:
@@ -77,6 +81,17 @@ class ExecutionService:
             created_step = self._exec_repo.create_step(exec_step)
             created_exec.steps.append(created_step)
 
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Execution started",
+            event_name="execution_mutated",
+            action="start",
+            execution_id=str(created_exec.id),
+            task_id=str(task_id),
+            step_count=len(created_exec.steps),
+            outcome="success",
+        )
         return created_exec
 
     def complete_step(
@@ -115,7 +130,19 @@ class ExecutionService:
         step.notes = notes
         step.updated_at = now
 
-        return self._exec_repo.update_step(step)
+        updated_step = self._exec_repo.update_step(step)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Execution step completed",
+            event_name="execution_mutated",
+            action="complete_step",
+            execution_id=str(execution_id),
+            step_id=str(step_id),
+            evidence_type=updated_step.evidence_type.value,
+            outcome="success",
+        )
+        return updated_step
 
     def skip_step(
         self,
@@ -141,7 +168,18 @@ class ExecutionService:
 
         step.status = StepStatus.SKIPPED
         step.updated_at = datetime.now(tz=UTC)
-        return self._exec_repo.update_step(step)
+        updated_step = self._exec_repo.update_step(step)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Execution step skipped",
+            event_name="execution_mutated",
+            action="skip_step",
+            execution_id=str(execution_id),
+            step_id=str(step_id),
+            outcome="success",
+        )
+        return updated_step
 
     def complete_execution(
         self,
@@ -167,7 +205,18 @@ class ExecutionService:
             execution.notes = notes
         execution.updated_at = now
 
-        return self._exec_repo.update(execution)
+        updated_execution = self._exec_repo.update(execution)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Execution completed",
+            event_name="execution_mutated",
+            action="complete",
+            execution_id=str(execution_id),
+            duration_seconds=updated_execution.duration_seconds,
+            outcome="success",
+        )
+        return updated_execution
 
     def abandon_execution(
         self,
@@ -188,7 +237,17 @@ class ExecutionService:
             execution.notes = notes
         execution.updated_at = now
 
-        return self._exec_repo.update(execution)
+        updated_execution = self._exec_repo.update(execution)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Execution abandoned",
+            event_name="execution_mutated",
+            action="abandon",
+            execution_id=str(execution_id),
+            outcome="success",
+        )
+        return updated_execution
 
     def get_evidence_upload_url(
         self,
@@ -202,6 +261,17 @@ class ExecutionService:
 
         key = f"evidence/{self._context.tenant_id}/{execution_id}/{step_id}"
         upload_url = self._storage.generate_upload_url(key, content_type)
+        emit_structured_log(
+            logger,
+            logging.INFO,
+            "Evidence upload URL generated",
+            event_name="execution_mutated",
+            action="generate_evidence_upload_url",
+            execution_id=str(execution_id),
+            step_id=str(step_id),
+            content_type=content_type,
+            outcome="success",
+        )
         return upload_url, key
 
     def list_executions(
