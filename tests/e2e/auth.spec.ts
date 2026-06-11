@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { E2E_EMAIL, E2E_PASSWORD } from "./helpers";
 
 /**
  * 認証フローのE2Eテスト
@@ -26,7 +27,7 @@ test.describe("認証フロー", () => {
   test("誤ったパスワードでログインするとエラーが表示される", async ({ page }) => {
     await page.goto("/login");
 
-    await page.locator('input[name="email"]').fill("takahashi@tomohiko.io");
+    await page.locator('input[name="email"]').fill(E2E_EMAIL);
     await page.locator('input[name="password"]').fill("wrongpassword123");
     await page.getByRole("button", { name: "ログイン" }).click();
 
@@ -65,11 +66,8 @@ test.describe("認証フロー", () => {
   test("正常ログインでダッシュボードへ遷移し、ログアウトできる", async ({ page }) => {
     await page.goto("/login");
 
-    const email = process.env.E2E_TEST_USER_EMAIL ?? "takahashi@tomohiko.io";
-    const password = process.env.E2E_TEST_USER_PASSWORD ?? "";
-
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
+    await page.locator('input[name="email"]').fill(E2E_EMAIL);
+    await page.locator('input[name="password"]').fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "ログイン" }).click();
 
     // ダッシュボードへ遷移
@@ -77,7 +75,7 @@ test.describe("認証フロー", () => {
     await expect(page.getByRole("heading", { name: "ダッシュボード" })).toBeVisible({ timeout: 10000 });
 
     // ユーザーメール表示確認
-    await expect(page.getByText(email)).toBeVisible();
+    await expect(page.getByText(E2E_EMAIL)).toBeVisible();
 
     // ログアウト
     await page.getByRole("button", { name: "ログアウト" }).click();
@@ -89,10 +87,8 @@ test.describe("認証フロー", () => {
   test("ログイン済みでログインページにアクセスするとダッシュボードへリダイレクト", async ({ page, context }) => {
     // まずログイン
     await page.goto("/login");
-    const email = process.env.E2E_TEST_USER_EMAIL ?? "takahashi@tomohiko.io";
-    const password = process.env.E2E_TEST_USER_PASSWORD ?? "";
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
+    await page.locator('input[name="email"]').fill(E2E_EMAIL);
+    await page.locator('input[name="password"]').fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "ログイン" }).click();
     await expect(page).toHaveURL("/", { timeout: 15000 });
 

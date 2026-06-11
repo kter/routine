@@ -1,6 +1,22 @@
 import { test, expect } from "@playwright/test";
+import { deleteTask } from "./helpers";
 
 const TEST_TASK_TITLE = `E2Eテスト_タスク_${Date.now()}`;
+const createdTaskIds: string[] = [];
+
+test.afterAll(async ({ browser }) => {
+  // テストで作成したタスクを削除（dev環境への残留防止）
+  if (createdTaskIds.length === 0) return;
+  const page = await browser.newPage();
+  for (const taskId of createdTaskIds) {
+    try {
+      await deleteTask(page, taskId);
+    } catch {
+      // cleanup failure is not critical
+    }
+  }
+  await page.close();
+});
 
 test.describe("タスク管理", () => {
   test.beforeEach(async ({ page }) => {
@@ -73,6 +89,7 @@ test.describe("タスク管理", () => {
 
       await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]+/, { timeout: 15000 });
       await expect(page.getByRole("heading", { name: title })).toBeVisible({ timeout: 10000 });
+      createdTaskIds.push(page.url().split("/tasks/")[1]);
     });
 
     test("ステップを追加してタスクを作成できる", async ({ page }) => {
@@ -90,6 +107,7 @@ test.describe("タスク管理", () => {
 
       await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]+/, { timeout: 15000 });
       await expect(page.getByText("手順1: 確認する")).toBeVisible({ timeout: 10000 });
+      createdTaskIds.push(page.url().split("/tasks/")[1]);
     });
   });
 
@@ -105,6 +123,7 @@ test.describe("タスク管理", () => {
       await page.waitForURL(/\/tasks\/[0-9a-f-]+/, { timeout: 15000 });
       const url = page.url();
       taskId = url.split("/tasks/")[1];
+      createdTaskIds.push(taskId);
       await page.close();
     });
 
