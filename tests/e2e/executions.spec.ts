@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { deleteTask } from "./helpers";
 
 /**
  * 実行管理のE2Eテスト
@@ -77,10 +78,7 @@ test.describe("実行開始フロー", () => {
     if (!taskId) return;
     const page = await browser.newPage();
     try {
-      await page.goto(`/tasks/${taskId}`);
-      // 削除ボタンクリック
-      await page.locator("button").filter({ hasText: /^$/ }).last().click();
-      await page.getByRole("button", { name: "削除" }).click().catch(() => {});
+      await deleteTask(page, taskId);
     } catch (e) {
       // cleanup failure is not critical
     }
@@ -167,9 +165,7 @@ test.describe("実行詳細ページ", () => {
     if (!taskId) return;
     const page = await browser.newPage();
     try {
-      await page.goto(`/tasks/${taskId}`);
-      await page.locator("button").filter({ hasText: /^$/ }).last().click();
-      await page.getByRole("button", { name: "削除" }).click().catch(() => {});
+      await deleteTask(page, taskId);
     } catch (e) {
       // cleanup failure is not critical
     }

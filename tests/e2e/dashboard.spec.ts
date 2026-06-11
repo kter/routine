@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { E2E_EMAIL } from "./helpers";
 
 /**
  * ダッシュボードのE2Eテスト
@@ -38,7 +39,7 @@ test.describe("ダッシュボード", () => {
   });
 
   test("トップバーにユーザーメールとログアウトボタンが表示される", async ({ page }) => {
-    await expect(page.getByText("takahashi@tomohiko.io")).toBeVisible();
+    await expect(page.getByText(E2E_EMAIL)).toBeVisible();
     await expect(page.getByRole("button", { name: "ログアウト" })).toBeVisible();
   });
 
